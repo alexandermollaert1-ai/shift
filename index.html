@@ -1,0 +1,3466 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Shift</title>
+<link rel="icon" href="data:," id="favIcon">
+<link rel="apple-touch-icon" id="appleIcon" href="data:,">
+<meta name="theme-color" content="#019BDB" id="themeColor">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Shift" id="appTitleMeta">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&family=Archivo+Black&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsqr/1.4.0/jsQR.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --bg:#E7F4FB;
+    --surface:#FFFFFF;
+    --ink:#16202A;
+    --ink-soft:#4B5763;
+    --line:#D7DBDD;
+    --navy:#0A6E9E;
+    --navy-deep:#019BDB;
+    --amber:#FBC913;
+    --amber-ink:#5A3A08;
+    --red:#E2024B;
+    --green:#2F7D5C;
+    --brand-orange:#EB5429;
+    --on-deep:#16202A;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Archivo',system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  #app{
+    max-width:480px;
+    margin:0 auto;
+    min-height:100vh;
+    background:var(--bg);
+    display:flex;
+    flex-direction:column;
+    position:relative;
+  }
+
+  /* ---------- Header ---------- */
+  header.topbar{
+    background:var(--navy);
+    color:#fff;
+    padding:16px 18px 14px;
+    position:sticky;
+    top:0;
+    z-index:20;
+    border-bottom:3px solid var(--amber);
+  }
+  header.topbar .row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  header.topbar h1{
+    font-size:19px;
+    font-weight:800;
+    margin:0;
+    letter-spacing:-0.01em;
+  }
+  header.topbar .sub{
+    font-size:12.5px;
+    color:#B9C6D6;
+    margin-top:2px;
+  }
+  .user-chip{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:13px;
+    background:rgba(255,255,255,0.08);
+    padding:6px 10px;
+    border-radius:20px;
+    cursor:pointer;
+    border:none;
+    color:#fff;
+    font-family:inherit;
+  }
+  .user-chip .dot{
+    width:8px;height:8px;border-radius:50%;
+    background:var(--amber);
+  }
+
+  /* ---------- Main / views ---------- */
+  main{
+    flex:1;
+    padding:0 0 90px;
+  }
+  .view{display:none;}
+  .view.active{display:block;}
+
+  h2.section-title{
+    font-size:16px;
+    font-weight:700;
+    margin:0 0 4px;
+  }
+  p.section-hint{
+    font-size:13px;
+    color:var(--ink-soft);
+    margin:0 0 16px;
+  }
+
+  /* ---------- Auth screens ---------- */
+  .onboard-wrap{
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    padding:32px 24px;
+    max-width:480px;
+    margin:0 auto;
+  }
+  .onboard-mark{
+    width:52px;height:52px;border-radius:12px;
+    background:var(--navy);
+    display:flex;align-items:center;justify-content:center;
+    margin-bottom:18px;
+    border-bottom:4px solid var(--amber);
+  }
+  .onboard-mark span{
+    font-family:'Archivo Black';
+    color:var(--amber);
+    font-size:22px;
+  }
+  .onboard-mark-img{ width:64px; height:64px; border-radius:16px; object-fit:cover; margin-bottom:18px; }
+  .onboard-wrap h1{
+    font-size:26px;
+    font-weight:800;
+    margin:0 0 6px;
+    letter-spacing:-0.01em;
+  }
+  .onboard-wrap p{
+    color:var(--ink-soft);
+    font-size:14.5px;
+    margin:0 0 26px;
+    line-height:1.5;
+  }
+  .card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:18px;
+  }
+  label.field-label{
+    display:block;
+    font-size:12.5px;
+    font-weight:700;
+    color:var(--ink-soft);
+    margin:14px 0 6px;
+  }
+  label.field-label:first-child{ margin-top:0; }
+  input[type=text], input[type=password], input[type=email]{
+    width:100%;
+    padding:11px 12px;
+    border-radius:10px;
+    border:1.5px solid var(--line);
+    font-family:inherit;
+    font-size:14.5px;
+    background:#fff;
+    color:var(--ink);
+  }
+  .field-row{ display:flex; gap:8px; align-items:flex-end; }
+  .field-row > div{ flex:1; }
+  .btn-ghost-sm{
+    padding:11px 12px;
+    border-radius:10px;
+    border:1.5px solid var(--line);
+    background:#fff;
+    font-family:inherit;
+    font-size:12.5px;
+    font-weight:700;
+    color:var(--navy);
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .toggle-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-top:16px;
+    font-size:13.5px;
+    color:var(--ink-soft);
+  }
+  .btn-primary{
+    width:100%;
+    margin-top:20px;
+    padding:13px;
+    border-radius:10px;
+    border:none;
+    background:var(--amber);
+    color:var(--amber-ink);
+    font-family:inherit;
+    font-weight:800;
+    font-size:14.5px;
+    cursor:pointer;
+  }
+  .btn-primary:disabled{ opacity:0.45; }
+  .btn-secondary{
+    width:100%;
+    margin-top:10px;
+    padding:12px;
+    border-radius:10px;
+    border:1.5px solid var(--line);
+    background:#fff;
+    color:var(--ink);
+    font-family:inherit;
+    font-weight:700;
+    font-size:13.5px;
+    cursor:pointer;
+  }
+  .err-msg{
+    color:var(--red);
+    font-size:13px;
+    margin-top:8px;
+    font-weight:600;
+  }
+  .info-msg{
+    color:var(--green);
+    font-size:13px;
+    margin-top:8px;
+    font-weight:600;
+  }
+  .switch-user-link{
+    background:none;border:none;color:var(--ink-soft);
+    font-family:inherit;font-size:12px;text-decoration:underline;
+    cursor:pointer;padding:0;margin-top:18px;
+  }
+
+  /* ---------- Calendar ---------- */
+  .month-nav{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:14px;
+  }
+  .month-nav .label{
+    font-weight:800;
+    font-size:15.5px;
+    text-transform:capitalize;
+  }
+  .month-nav button{
+    width:34px;height:34px;
+    border-radius:8px;
+    border:1.5px solid var(--line);
+    background:#fff;
+    font-size:16px;
+    cursor:pointer;
+    color:var(--navy);
+    font-weight:700;
+  }
+  .month-nav button:disabled{ opacity:0.35; cursor:not-allowed; }
+  .weekday-row{
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    gap:4px;
+    margin-bottom:6px;
+  }
+  .weekday-row div{
+    text-align:center;
+    font-size:11px;
+    font-weight:700;
+    color:var(--ink-soft);
+  }
+  .cal-grid{
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    gap:4px;
+  }
+  .cal-day{
+    aspect-ratio:1;
+    border-radius:9px;
+    border:1.5px solid var(--line);
+    background:#fff;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+    color:var(--ink);
+    position:relative;
+  }
+  .cal-day.empty{visibility:hidden; cursor:default;}
+  .cal-day.available{background:var(--green); border-color:var(--green); color:#fff;}
+  .cal-day.unavailable{background:var(--red); border-color:var(--red); color:#fff;}
+  .cal-day .shift-dot{
+    width:5px;height:5px;border-radius:50%;
+    background:var(--amber);
+    position:absolute;
+    bottom:5px;
+  }
+  .cal-day .count-badge{
+    position:absolute;
+    top:3px; right:3px;
+    background:var(--brand-orange);
+    color:#fff;
+    font-size:9px;
+    font-weight:800;
+    border-radius:8px;
+    padding:1px 4px;
+    line-height:1.3;
+  }
+  .cal-day .avail-badge{
+    position:absolute;
+    top:3px; left:3px;
+    background:var(--green);
+    color:#fff;
+    font-size:9px;
+    font-weight:800;
+    border-radius:8px;
+    padding:1px 4px;
+    line-height:1.3;
+  }
+  .legend{
+    display:flex;
+    gap:16px;
+    margin-top:16px;
+    font-size:12px;
+    color:var(--ink-soft);
+    flex-wrap:wrap;
+  }
+  .legend span{display:flex;align-items:center;gap:6px;}
+  .legend .sw{width:11px;height:11px;border-radius:3px;}
+
+  /* ---------- Confirm banner ---------- */
+  .confirm-box{
+    margin-top:18px;
+    padding:14px;
+    border-radius:var(--radius);
+    border:1.5px solid var(--line);
+    background:var(--surface);
+  }
+  .confirm-box.confirmed{
+    border-color:var(--green);
+    background:#EAF5EF;
+  }
+  .confirm-box .cf-title{
+    font-weight:800;
+    font-size:13.5px;
+    margin-bottom:3px;
+  }
+  .confirm-box.confirmed .cf-title{ color:var(--green); }
+  .confirm-box .cf-sub{
+    font-size:12.5px;
+    color:var(--ink-soft);
+    margin-bottom:10px;
+  }
+  .confirm-box button{
+    width:100%;
+    padding:11px;
+    border-radius:10px;
+    border:none;
+    background:var(--navy);
+    color:#fff;
+    font-family:inherit;
+    font-weight:800;
+    font-size:13.5px;
+    cursor:pointer;
+  }
+  .confirm-box button:disabled{ opacity:0.4; cursor:default; }
+
+  /* ---------- Modal (planning day detail) ---------- */
+  .modal-overlay{
+    position:fixed; inset:0;
+    background:rgba(15,20,26,0.5);
+    display:flex; align-items:flex-end; justify-content:center;
+    z-index:60;
+  }
+  .modal-card{
+    background:#fff;
+    width:100%;
+    max-width:480px;
+    max-height:82vh;
+    overflow-y:auto;
+    border-radius:18px 18px 0 0;
+    padding:18px 16px calc(18px + env(safe-area-inset-bottom));
+  }
+  .modal-head{
+    display:flex; justify-content:space-between; align-items:center;
+    margin-bottom:4px;
+  }
+  .modal-date{ font-weight:800; font-size:16px; text-transform:capitalize; }
+  .modal-close{
+    background:var(--bg); border:none; width:30px; height:30px; border-radius:50%;
+    font-size:16px; font-weight:800; color:var(--ink-soft); cursor:pointer;
+  }
+  .modal-sub{ font-size:12.5px; color:var(--ink-soft); margin-bottom:14px; }
+  .staff-row{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:11px 4px;
+    border-bottom:1px solid var(--line);
+  }
+  .staff-row:last-child{ border-bottom:none; }
+  .staff-row .sr-name{ font-weight:700; font-size:14px; }
+  .staff-row .sr-status{ font-size:11.5px; color:var(--ink-soft); margin-top:2px; }
+  .staff-row .sr-status.avail{ color:var(--green); }
+  .staff-row .sr-status.unavail{ color:var(--red); }
+  .check-btn{
+    width:30px; height:30px; border-radius:50%;
+    border:2px solid var(--line);
+    background:#fff;
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0;
+  }
+  .check-btn svg{ width:16px; height:16px; stroke:#fff; display:none; }
+  .check-btn.checked{
+    background:var(--green);
+    border-color:var(--green);
+  }
+  .check-btn.checked svg{ display:block; }
+
+  /* ---------- Planning ---------- */
+  .no-users-hint{
+    font-size:13px; color:var(--ink-soft); padding:14px; text-align:center;
+  }
+
+  /* ---------- Beheer (admin users) ---------- */
+  .user-row{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:12px 0; border-bottom:1px solid var(--line);
+    gap:10px;
+  }
+  .user-row:last-child{ border-bottom:none; }
+  .user-row .u-name{ font-weight:700; font-size:14px; }
+  .user-row .u-email{ font-size:12px; color:var(--ink-soft); }
+  .badge{
+    display:inline-block; font-size:10.5px; font-weight:800;
+    padding:2px 7px; border-radius:8px; margin-left:6px;
+    vertical-align:middle;
+  }
+  .badge.admin{ background:var(--navy); color:#fff; }
+  .badge.pending{ background:var(--amber); color:var(--amber-ink); }
+  .reset-panel{
+    margin-top:10px; padding-top:10px; border-top:1px dashed var(--line);
+  }
+
+  /* ---------- Messages ---------- */
+  .msg-compose{ display:flex; gap:8px; margin-bottom:18px; }
+  .msg-compose textarea{
+    flex:1; resize:none; border-radius:10px; border:1.5px solid var(--line);
+    padding:10px 12px; font-family:inherit; font-size:14px; min-height:46px; color:var(--ink);
+  }
+  .msg-compose button{
+    border:none; background:var(--navy); color:#fff; border-radius:10px;
+    padding:0 16px; font-weight:700; font-size:13px; cursor:pointer;
+  }
+  .msg-item{
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    padding:13px 14px; margin-bottom:10px;
+  }
+  .msg-item .m-head{ display:flex; justify-content:space-between; margin-bottom:5px; }
+  .msg-item .m-author{ font-weight:800; font-size:13px; color:var(--navy); }
+  .msg-item .m-time{ font-size:11px; color:var(--ink-soft); }
+  .msg-item .m-text{ font-size:14px; line-height:1.45; white-space:pre-wrap; }
+  .empty-state{ text-align:center; padding:40px 20px; color:var(--ink-soft); font-size:13.5px; }
+
+  /* ---------- Bottom nav ---------- */
+  nav.tabbar{
+    position:fixed; bottom:0; left:50%; transform:translateX(-50%);
+    width:100%; max-width:480px; background:var(--surface); border-top:1px solid var(--line);
+    display:flex; padding:8px 6px calc(8px + env(safe-area-inset-bottom)); z-index:20;
+  }
+  nav.tabbar button{
+    flex:1; background:none; border:none; font-family:inherit; font-size:11px; font-weight:700;
+    color:var(--ink-soft); padding:6px 2px 2px; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+  }
+  nav.tabbar button .ic{ width:20px; height:20px; }
+  nav.tabbar button.active{ color:var(--navy); }
+  nav.tabbar button.active .ic svg{ stroke:var(--navy); }
+
+  .loading-screen{
+    min-height:100vh; display:flex; align-items:center; justify-content:center;
+    color:var(--ink-soft); font-size:13.5px;
+  }
+
+  /* ---------- New shell (Home/Werktijden/Beschikbaarheid/Meer) ---------- */
+  .topbar2{
+    background:var(--navy-deep); color:var(--on-deep); padding:12px 16px 12px;
+    position:sticky; top:0; z-index:20; border-bottom:1px solid rgba(0,0,0,0.12);
+  }
+  .topbar2 .row{ display:flex; align-items:center; justify-content:space-between; }
+  .topbar2 h1{ font-size:19px; font-weight:800; margin:0; flex:1; text-align:center; }
+  .bell-btn{ background:none; border:none; color:var(--on-deep); cursor:pointer; padding:4px; width:28px; }
+  .bell-btn svg{ width:22px; height:22px; }
+  .header-logo{ width:46px; height:46px; border-radius:50%; object-fit:cover; flex-shrink:0; display:block; border:2px solid rgba(255,255,255,0.55); }
+  .spacer28{ width:28px; flex-shrink:0; }
+
+  .date-strip{ display:flex; gap:6px; overflow-x:auto; padding:14px 12px 6px; }
+  .date-pill{
+    flex:1 1 0; min-width:0; padding:9px 4px; border-radius:12px; border:1.5px solid transparent;
+    background:transparent; text-align:center; cursor:pointer; font-family:inherit; color:var(--ink-soft);
+  }
+  .date-pill .dnum{ font-size:11px; font-weight:600; display:block; }
+  .date-pill .dday{ font-size:16px; font-weight:800; display:block; color:var(--ink); margin-top:2px; }
+  .date-pill.selected{ background:#fff; border-color:var(--line); box-shadow:0 1px 4px rgba(0,0,0,0.08); }
+  .date-pill.selected .dday{ color:var(--navy); }
+  .date-pill.has-shift .dday::after{ content:''; display:block; width:5px; height:5px; border-radius:50%; background:var(--amber); margin:3px auto 0; }
+
+  .week-nav{ display:flex; align-items:center; justify-content:space-between; padding:2px 16px 0; }
+  .week-nav button{ background:none; border:none; color:var(--navy); font-size:15px; font-weight:800; cursor:pointer; padding:6px; }
+  .week-nav .wn-label{ font-size:12.5px; color:var(--ink-soft); font-weight:700; }
+
+  .shift-panel{
+    margin:14px 16px 8px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    padding:22px 16px; display:flex; align-items:center; gap:10px; justify-content:center;
+    color:var(--ink-soft); font-weight:600; font-size:14.5px; text-align:center;
+  }
+  .shift-panel svg{ width:19px; height:19px; flex-shrink:0; }
+  .shift-list{ margin:14px 16px 8px; display:flex; flex-direction:column; gap:8px; }
+  .shift-chip{
+    background:#EAF5EF; border:1px solid var(--green); color:var(--green); border-radius:12px;
+    padding:12px 14px; font-weight:700; font-size:13.5px; display:flex; align-items:center; justify-content:space-between;
+  }
+
+  .news-section{ padding:6px 16px 24px; }
+  .news-heading{ font-size:13.5px; font-weight:700; color:var(--ink-soft); margin:14px 0 8px; }
+  .news-card{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:14px; cursor:pointer; }
+  .news-card .n-author{ font-weight:800; font-size:13px; color:var(--navy); }
+  .news-card .n-time{ font-size:11px; color:var(--ink-soft); margin-left:6px; }
+  .news-card .n-text{ font-size:13.5px; margin-top:6px; line-height:1.4; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+
+  .subtabs{ display:flex; border-bottom:1px solid var(--line); background:#fff; position:sticky; top:70px; z-index:15; }
+  .subtabs button{ flex:1; background:none; border:none; padding:13px 4px; font-family:inherit; font-weight:700; font-size:14px; color:var(--ink-soft); border-bottom:2.5px solid transparent; cursor:pointer; }
+  .subtabs button.active{ color:var(--navy); border-color:var(--navy); }
+
+  .tab-body-pad{ padding-top:16px; padding-bottom:24px; }
+
+  .entry-row{ display:flex; align-items:center; justify-content:space-between; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin:0 16px 8px; }
+  .entry-row .e-date{ font-weight:700; font-size:13.5px; text-transform:capitalize; }
+  .entry-row .e-right{ display:flex; align-items:center; gap:10px; }
+  .status-badge{ font-size:11.5px; font-weight:800; padding:4px 9px; border-radius:8px; white-space:nowrap; }
+  .status-badge.avail{ background:#EAF5EF; color:var(--green); }
+  .status-badge.unavail{ background:#FBEAE9; color:var(--red); }
+  .del-btn{ background:none; border:none; color:var(--ink-soft); font-size:17px; font-weight:800; cursor:pointer; padding:0 2px; line-height:1; }
+
+  .sticky-cta-wrap{ position:sticky; bottom:0; padding:14px 16px calc(14px + env(safe-area-inset-bottom)); background:linear-gradient(to top, var(--bg) 65%, transparent); margin-top:8px; }
+  .cta-green{ width:100%; padding:14px; border-radius:12px; border:none; background:var(--green); color:#fff; font-family:inherit; font-weight:800; font-size:14.5px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; }
+
+  .add-form{ margin:8px 16px 16px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:16px; }
+  .radio-row{ display:flex; gap:10px; margin-top:8px; }
+  .radio-opt{ flex:1; text-align:center; padding:11px; border-radius:10px; border:1.5px solid var(--line); font-weight:700; font-size:13px; cursor:pointer; color:var(--ink-soft); background:#fff; }
+  .radio-opt.selected.avail{ background:#EAF5EF; border-color:var(--green); color:var(--green); }
+  .radio-opt.selected.unavail{ background:#FBEAE9; border-color:var(--red); color:var(--red); }
+  .form-btn-row{ display:flex; gap:8px; margin-top:16px; }
+  .form-btn-row .cta-green{ margin:0; }
+  .form-btn-row .btn-cancel{ flex:0 0 auto; padding:0 18px; border-radius:12px; border:1.5px solid var(--line); background:#fff; color:var(--ink-soft); font-family:inherit; font-weight:700; font-size:13.5px; cursor:pointer; }
+
+  .weekday-pattern-card{ margin:8px 16px 16px; border-radius:var(--radius); overflow:hidden; border:1px solid var(--line); }
+  .weekday-pattern-row{ display:flex; align-items:center; justify-content:space-between; padding:14px 16px; background:var(--surface); border-bottom:1px solid var(--line); }
+  .weekday-pattern-row:last-child{ border-bottom:none; }
+  .weekday-pattern-row .wp-label{ font-weight:600; font-size:14.5px; }
+  .switch{ position:relative; width:44px; height:26px; flex-shrink:0; display:inline-block; }
+  .switch input{ opacity:0; width:0; height:0; }
+  .switch .slider{ position:absolute; inset:0; background:var(--line); border-radius:999px; cursor:pointer; transition:.15s; }
+  .switch .slider:before{ content:""; position:absolute; width:20px; height:20px; left:3px; top:3px; background:#fff; border-radius:50%; transition:.15s; }
+  .switch input:checked + .slider{ background:var(--green); }
+  .switch input:checked + .slider:before{ transform:translateX(18px); }
+  .pattern-hint{ font-size:12.5px; color:var(--ink-soft); margin:0 16px 14px; line-height:1.5; }
+
+  .profile-header2{ display:flex; flex-direction:column; align-items:center; padding:32px 20px 30px; background:var(--navy); margin-bottom:16px; }
+  .avatar-circle{ width:88px; height:88px; border-radius:50%; background:#fff; display:flex; align-items:center; justify-content:center; color:var(--navy); margin-bottom:14px; }
+  .avatar-circle svg{ width:44px; height:44px; }
+  .profile-header2 h2{ font-size:19px; font-weight:800; margin:0; color:#fff; }
+  .profile-header2 .p-sub{ font-size:13px; color:rgba(255,255,255,0.85); margin-top:2px; }
+
+  .menu-card{ margin:0 16px 16px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; }
+  .menu-item{ display:flex; align-items:center; gap:12px; padding:15px 16px; border-bottom:1px solid var(--line); cursor:pointer; background:none; border-left:none; border-right:none; border-top:none; width:100%; text-align:left; font-family:inherit; color:var(--ink); }
+  .menu-item:last-child{ border-bottom:none; }
+  .menu-item .m-ic{ width:20px; color:var(--ink-soft); flex-shrink:0; display:flex; }
+  .menu-item .m-ic svg{ width:20px; height:20px; }
+  .menu-item .m-label{ flex:1; font-weight:600; font-size:14.5px; }
+  .menu-item .m-arrow{ color:var(--line); font-size:19px; font-weight:800; }
+  .logout-btn2{ margin:20px 16px 24px; width:calc(100% - 32px); padding:14px; border-radius:12px; border:none; background:var(--red); color:#fff; font-family:inherit; font-weight:800; font-size:14.5px; cursor:pointer; }
+
+  .subview-head{ display:flex; align-items:center; gap:10px; padding:14px 16px 6px; background:var(--bg); }
+  .subview-head button.back-btn2{ background:var(--surface); border:1px solid var(--line); width:32px; height:32px; border-radius:50%; font-size:17px; color:var(--ink); cursor:pointer; flex-shrink:0; }
+  .subview-head .sv-title{ font-weight:800; font-size:16px; }
+
+  .info-line{ margin:0 16px 12px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px; }
+  .info-line .il-label{ font-size:11.5px; font-weight:700; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.02em; }
+  .info-line .il-value{ font-size:14.5px; font-weight:600; margin-top:2px; }
+
+  .impersonate-bar{
+    background:var(--brand-orange); color:#fff; font-size:12.5px; font-weight:700;
+    padding:9px 16px; display:flex; align-items:center; gap:8px; justify-content:center; flex-wrap:wrap;
+  }
+  .impersonate-bar button{
+    background:rgba(255,255,255,0.25); border:none; color:#fff; font-family:inherit; font-weight:800;
+    font-size:11.5px; padding:5px 10px; border-radius:8px; cursor:pointer;
+  }
+  .cal-day.selected-day{ outline:2px solid var(--navy); outline-offset:-2px; }
+  .cal-grid-lg .cal-day{ font-size:15px; font-weight:700; }
+  .cal-day.pending-change{ outline:2.5px dashed var(--amber); outline-offset:-2.5px; }
+  .day-group-heading{ margin:18px 16px 6px; font-weight:800; font-size:13.5px; text-transform:capitalize; color:var(--ink-soft); }
+  .day-group-heading:first-child{ margin-top:0; }
+
+  /* ---------- Admin week grid ---------- */
+  .week-scroll{ overflow-x:auto; margin:0 16px; border:1px solid var(--line); border-radius:12px; background:#fff; -webkit-overflow-scrolling:touch; }
+  .grid-table{ border-collapse:collapse; width:max-content; min-width:100%; }
+  .grid-table th, .grid-table td{ border:1px solid var(--line); padding:8px 9px; text-align:left; vertical-align:top; font-size:12px; }
+  .grid-table thead th{ background:var(--bg); font-weight:800; text-align:center; white-space:nowrap; font-size:11.5px; position:sticky; top:0; z-index:2; }
+  .grid-table .sticky-col{ position:sticky; left:0; background:#fff; z-index:3; min-width:112px; box-shadow:2px 0 4px rgba(0,0,0,0.05); }
+  .grid-table thead th.sticky-col{ z-index:4; background:var(--bg); }
+  .gm-name{ font-weight:700; font-size:12.5px; }
+  .gm-role{ font-size:10.5px; color:var(--ink-soft); margin-top:1px; }
+  .grid-cell{ min-width:96px; cursor:pointer; }
+  .grid-cell:active{ background:var(--bg); }
+  .dash-chip{ border:1.5px dashed var(--green); color:var(--green); border-radius:8px; padding:4px 6px; font-size:10px; font-weight:700; margin-bottom:4px; white-space:nowrap; }
+  .dash-chip.unavail{ border-color:var(--red); color:var(--red); }
+  .solid-chip{ background:var(--green); color:#fff; border-radius:8px; padding:4px 6px; font-size:10px; font-weight:700; white-space:nowrap; }
+  .sw-dash{ width:14px; height:10px; border:1.5px dashed var(--green); border-radius:4px; display:inline-block; }
+  .solid-chip.pending-chip{ background:var(--amber); color:var(--amber-ink); outline:1.5px dashed rgba(0,0,0,0.35); outline-offset:-3px; }
+  .cal-day.pending-avail{ background:#fff; border:2.5px dashed var(--green); color:var(--green); font-weight:800; }
+  .cal-day.pending-unavail{ background:#fff; border:2.5px dashed var(--red); color:var(--red); font-weight:800; }
+  .cal-day.cal-day-disabled{ background:#F3F4F5; color:var(--ink-soft); opacity:0.55; cursor:not-allowed; }
+  .week-day-row{ margin:0 16px 8px; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px 14px; }
+  .week-day-row.has-shift{ border-color:var(--green); }
+  .wdr-top{ display:flex; align-items:center; justify-content:space-between; }
+  .wdr-date{ font-weight:700; font-size:13.5px; text-transform:capitalize; }
+  .wdr-empty{ font-size:12px; color:var(--ink-soft); }
+  .wdr-colleagues{ margin-top:7px; padding-top:7px; border-top:1px dashed var(--line); font-size:12px; color:var(--ink-soft); }
+  .colleague-note{ margin-top:10px; font-size:12.5px; color:var(--ink-soft); text-align:center; }
+
+  /* ---------- Kiosk QR screen ---------- */
+  #app:has(.kiosk-wrap){ max-width:none; }
+  .kiosk-wrap{ min-height:100vh; display:flex; align-items:center; justify-content:center; background:var(--navy-deep); padding:24px; }
+  .kiosk-card{ background:#fff; border-radius:24px; padding:36px 32px; display:flex; flex-direction:column; align-items:center; max-width:360px; width:100%; }
+  .kiosk-title{ font-weight:800; font-size:18px; color:var(--navy); margin-bottom:22px; letter-spacing:0.02em; }
+  .kiosk-qr{ width:260px; height:260px; display:flex; align-items:center; justify-content:center; }
+  .kiosk-hint{ margin-top:22px; font-size:13px; color:var(--ink-soft); text-align:center; }
+  .kiosk-logout{ margin-top:16px; background:none; border:none; color:var(--line); font-family:inherit; font-size:11.5px; text-decoration:underline; cursor:pointer; padding:4px; }
+
+  /* ---------- Clock in/out ---------- */
+  .clock-status-card{ margin:0 16px 8px; background:var(--surface); border:1.5px solid var(--line); border-radius:var(--radius); padding:24px 16px; text-align:center; }
+  .clock-status-card.in{ background:#EAF5EF; border-color:var(--green); }
+  .clock-status-card .cs-label{ font-weight:800; font-size:16px; }
+  .clock-status-card.in .cs-label{ color:var(--green); }
+  .clock-status-card .cs-sub{ font-size:12.5px; color:var(--ink-soft); margin-top:4px; }
+
+  /* ---------- Scanner modal ---------- */
+  .scanner-card #scanVideo{ width:100%; border-radius:14px; margin-top:10px; background:#000; max-height:60vh; object-fit:cover; }
+
+  /* ---------- Uren-ledger ---------- */
+  .grid-table .ledger-input{
+    width:64px; padding:5px 6px; border-radius:6px; border:1.5px solid var(--line);
+    font-family:inherit; font-size:12px; text-align:right;
+  }
+  .grid-table td.ledger-owe{ color:var(--red); font-weight:800; }
+
+
+  /* ---------- Responsief: telefoon (standaard) → tablet → computer ---------- */
+  /* Tablet: iets bredere kolom, dialogen gecentreerd */
+  @media (min-width:700px){
+    #app{ max-width:780px; }
+    nav.tabbar{ max-width:780px; }
+    .onboard-wrap{ max-width:520px; }
+    .modal-overlay{ align-items:center; padding:24px; }
+    .modal-card{ max-width:560px; border-radius:18px; }
+    .kiosk-card{ max-width:420px; }
+  }
+  /* Computer: volledig scherm met zijmenu links */
+  @media (min-width:1024px){
+    #app:has(nav.tabbar){ max-width:none; margin:0; padding-left:230px; }
+    #app:has(nav.tabbar) > #mainContent{ width:100%; max-width:1500px; margin:0 auto; padding:8px 24px 40px; }
+    nav.tabbar{
+      position:fixed; top:0; bottom:0; left:0; transform:none; width:230px; max-width:230px;
+      flex-direction:column; justify-content:flex-start; gap:4px;
+      padding:84px 12px 16px; border-top:none; border-right:1px solid var(--line);
+    }
+    nav.tabbar button{
+      flex:none; flex-direction:row; justify-content:flex-start; gap:12px;
+      font-size:14.5px; padding:12px 14px; border-radius:10px; text-align:left;
+    }
+    nav.tabbar button:hover{ background:var(--bg); }
+    nav.tabbar button.active{ background:var(--bg); }
+    nav.tabbar button .ic{ width:22px; height:22px; }
+    .topbar2{ margin-left:0; }
+    .topbar2 h1{ text-align:left; padding-left:14px; font-size:21px; }
+    .modal-card{ max-width:640px; }
+    .week-scroll{ margin:0 16px; }
+    .sticky-cta-wrap{ max-width:520px; }
+    .kiosk-card{ max-width:520px; }
+    .grid-table th, .grid-table td{ font-size:13px; padding:10px 12px; }
+    .grid-table .sticky-col{ min-width:150px; }
+  }
+
+  /* ---------- Compactere kalenders: minder scrollen ---------- */
+  .cal-grid{ gap:3px; }
+  .cal-grid .cal-day{ aspect-ratio:auto; height:42px; border-radius:8px; }
+  .cal-grid-lg .cal-day{ height:46px; }
+  .weekday-row{ margin-bottom:4px; }
+  .tab-body-pad{ padding-top:10px; padding-bottom:16px; }
+  .month-nav{ margin-bottom:8px; }
+  .month-nav button{ width:32px; height:32px; }
+  @media (max-height:740px){
+    .cal-grid .cal-day{ height:36px; }
+    .cal-grid-lg .cal-day{ height:40px; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="loading" class="loading-screen">Bezig met laden…</div>
+</div>
+
+<script>
+const MAANDEN=['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
+const DAGEN=['ma','di','wo','do','vr','za','zo'];
+const DEFAULT_LOGO='data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#0A6E9E"/><path d="M18 24h24l-7-7M46 40H22l7 7" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>');
+const DEFAULT_BRAND={ id:null, slug:null, name:'Shift', legal_name:null, logo:null, color_primary:'#0A6E9E', color_secondary:'#019BDB', color_accent:'#FBC913', active:true };
+function brandLogo(){ return (state.tenant&&state.tenant.logo)||DEFAULT_LOGO; }
+function brandName(){ return (state.tenant&&state.tenant.name)||'Shift'; }
+function brandLegal(){ const t=state.tenant; return t&&t.legal_name ? t.name+' / '+t.legal_name : brandName(); }
+function brandSlugFile(){ return (state.tenant&&state.tenant.slug)||'shift'; }
+function hexToRgb(h){ h=String(h||'').replace('#',''); if(h.length!==6) return [0,0,0]; return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)]; }
+function rgbToHex(r){ return '#'+r.map(v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0')).join(''); }
+function lumi(h){ const [r,g,b]=hexToRgb(h).map(v=>{ v/=255; return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4); }); return 0.2126*r+0.7152*g+0.0722*b; }
+function readableOn(h){ return lumi(h)>0.35 ? '#16202A' : '#FFFFFF'; }
+function mixHex(h,w,t){ const a=hexToRgb(h), b=hexToRgb(w); return rgbToHex(a.map((v,i)=>v+(b[i]-v)*t)); }
+function applyBranding(t){
+  t=Object.assign({},DEFAULT_BRAND,t||{});
+  state.tenant=t;
+  const st=document.documentElement.style;
+  st.setProperty('--navy',t.color_primary);
+  st.setProperty('--navy-deep',t.color_secondary);
+  st.setProperty('--amber',t.color_accent);
+  st.setProperty('--amber-ink',readableOn(t.color_accent));
+  st.setProperty('--on-deep',readableOn(t.color_secondary));
+  st.setProperty('--bg',mixHex(t.color_secondary,'#FFFFFF',0.9));
+  document.title=t.name;
+  const set=(id,attr,val)=>{ const el=document.getElementById(id); if(el) el.setAttribute(attr,val); };
+  set('appleIcon','href',brandLogo()); set('favIcon','href',brandLogo());
+  set('themeColor','content',t.color_secondary); set('appTitleMeta','content',t.name);
+  try{
+    const abs=location.origin+location.pathname+(t.slug?'?k='+encodeURIComponent(t.slug):'');
+    const man={ name:t.name, short_name:t.name.slice(0,12), start_url:abs, scope:location.origin+location.pathname, display:'standalone', background_color:mixHex(t.color_secondary,'#FFFFFF',0.9), theme_color:t.color_secondary, icons:[{src:brandLogo(),sizes:'192x192'},{src:brandLogo(),sizes:'512x512'}] };
+    let link=document.getElementById('manifestLink');
+    if(!link){ link=document.createElement('link'); link.rel='manifest'; link.id='manifestLink'; document.head.appendChild(link); }
+    link.href=URL.createObjectURL(new Blob([JSON.stringify(man)],{type:'application/manifest+json'}));
+  }catch(e){}
+  if(t.slug){ try{ localStorage.setItem('shift-tenant',t.slug); }catch(e){} }
+}
+function rememberedSlug(){
+  try{ const u=new URLSearchParams(location.search).get('k'); if(u) return u.toLowerCase().trim(); }catch(e){}
+  try{ return localStorage.getItem('shift-tenant')||null; }catch(e){ return null; }
+}
+function forgetSlug(){ try{ localStorage.removeItem('shift-tenant'); }catch(e){} }
+
+function mondayNow(){ const d=new Date(); const day=(d.getDay()+6)%7; d.setDate(d.getDate()-day); d.setHours(0,0,0,0); return d; }
+
+let state={
+  currentUser:null,
+  users:[],
+  availability:{},
+  timeEntries:[],
+  kioskSecret:null,
+  paidHours:{},
+  ledgerMonthKey:null,
+  contractWeekStart:mondayNow(),
+  liantisEmail:'',
+  planPrefs:null,
+  tenant:null,
+  impersonatingFrom:null,
+  impersonatingSession:null,
+  schedule:{},
+  messages:[],
+  activeTab:'home',
+  meerSubView:null,
+  homeSelectedDate:null,
+  werktijdenMode:'week',
+  werktijdenWeekStart:mondayNow(),
+  adminGridWeekStart:mondayNow(),
+  pendingScheduleChanges:{},
+  werktijdenSelectedDate:null,
+  pendingAvail:{},
+  calMonth:new Date().getMonth(),
+  calYear:new Date().getFullYear(),
+};
+
+// ==== VUL HIER JE SUPABASE-GEGEVENS IN (zie instructies) ====
+const SUPABASE_URL = 'https://gvoawcmvvrraozwzxlbn.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_vj2MrAXUipG5CEvOFQW1kg_krSX6EaY';   // publieke sleutel: mag in de browser staan
+// ================================================================
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+function dateKey(y,m,d){ return y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0'); }
+function ymKey(y,m){ return y+'-'+String(m+1).padStart(2,'0'); }
+function uid(){ return Math.random().toString(36).slice(2,10); }
+function genTempPassword(){
+  const chars='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+  let out='';
+  for(let i=0;i<8;i++) out+=chars[Math.floor(Math.random()*chars.length)];
+  return out;
+}
+function escapeHtml(str){
+  const d=document.createElement('div'); d.textContent=str; return d.innerHTML;
+}
+async function sha256Hex(str){
+  const enc=new TextEncoder().encode(str);
+  const buf=await crypto.subtle.digest('SHA-256', enc);
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function randomSalt(){
+  return Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+async function currentJwt(){
+  const { data } = await sb.auth.getSession();
+  return data && data.session ? data.session.access_token : null;
+}
+async function callEdgeFunction(name, payload){
+  const jwt = await currentJwt();
+  try{
+    const res = await fetch(SUPABASE_URL+'/functions/v1/'+name, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+jwt, apikey:SUPABASE_ANON_KEY },
+      body: JSON.stringify(payload)
+    });
+    return await res.json();
+  }catch(e){ return { success:false, error:String(e) }; }
+}
+
+// Supabase geeft standaard maximaal 1000 rijen per aanvraag terug: grotere tabellen pagineren we dus zelf,
+// anders ontbreken stilzwijgend oudere (of nieuwere) registraties.
+async function fetchAll(table, cols, orders){
+  const out=[]; const size=1000;
+  for(let from=0; ; from+=size){
+    let q=sb.from(table).select(cols);
+    (orders||[]).forEach(o=>{ q=q.order(o); });
+    const { data, error } = await q.range(from, from+size-1);
+    if(error) return { data:out, error };
+    out.push(...(data||[]));
+    if(!data || data.length<size) break;
+  }
+  return { data:out, error:null };
+}
+
+async function loadAll(){
+  const uidMe = state.currentUser ? state.currentUser.id : null;
+
+  const [profilesRes, availRes, schedRes, msgRes, timeRes, paidRes, kioskRes, settingsRes, personalRes] = await Promise.all([
+    sb.from('profiles').select('id,name,email,is_admin,is_kiosk,must_change_password'),
+    fetchAll('availability','user_id,date',['user_id','date']),
+    fetchAll('schedule','date,user_id',['date','user_id']),
+    sb.from('messages').select('id,author_name,text,created_at').order('created_at',{ascending:false}).limit(150),
+    fetchAll('time_entries','id,user_id,type,ts,manual',['ts','id']),
+    fetchAll('paid_hours','user_id,week_start,hours',['user_id','week_start']),
+    sb.from('kiosk_secret').select('secret').maybeSingle(),
+    sb.from('app_settings').select('key,value'),
+    sb.from('personal_data').select('user_id,last_name,first_name,birth_date,street,postal,city'),
+  ]);
+
+  state.users = (profilesRes.data||[]).map(p=>({
+    id:p.id, name:p.name, email:p.email,
+    isAdmin:p.is_admin, isKiosk:p.is_kiosk, mustChangePassword:p.must_change_password
+  }));
+  (personalRes.data||[]).forEach(r=>{
+    const u=state.users.find(x=>x.id===r.user_id);
+    if(u) u.personal={ lastName:r.last_name, firstName:r.first_name, birthDate:r.birth_date, street:r.street, postal:r.postal, city:r.city, completed:true };
+  });
+
+  state.availability = {};
+  (availRes.data||[]).forEach(row=>{
+    if(!state.availability[row.user_id]) state.availability[row.user_id]={};
+    state.availability[row.user_id][row.date]='available';
+  });
+
+  state.schedule = {};
+  (schedRes.data||[]).forEach(row=>{
+    if(!state.schedule[row.date]) state.schedule[row.date]=[];
+    state.schedule[row.date].push({staffId:row.user_id});
+  });
+
+  state.messages = (msgRes.data||[]).map(m=>({ id:m.id, author:m.author_name, text:m.text, ts:new Date(m.created_at).getTime() }));
+
+  state.timeEntries = (timeRes.data||[]).map(t=>({ id:t.id, userId:t.user_id, type:t.type, ts:new Date(t.ts).getTime(), manual:t.manual }));
+
+  state.paidHours = {};
+  (paidRes.data||[]).forEach(row=>{
+    if(!state.paidHours[row.user_id]) state.paidHours[row.user_id]={};
+    state.paidHours[row.user_id][row.week_start]=Number(row.hours);
+  });
+
+  state.kioskSecret = kioskRes.data ? kioskRes.data.secret : null;
+
+  const liantisRow=(settingsRes.data||[]).find(r=>r.key==='liantis_email');
+  state.liantisEmail = liantisRow ? liantisRow.value : '';
+  const ppRow=(settingsRes.data||[]).find(r=>r.key==='planning_prefs');
+  try{ state.planPrefs = ppRow ? JSON.parse(ppRow.value) : null; }catch(e){ state.planPrefs=null; }
+
+  if(uidMe){
+    const fresh=state.users.find(u=>u.id===uidMe);
+    if(fresh) state.currentUser=fresh;
+  }
+}
+
+const PROFILE_COLS='id,name,email,is_admin,is_kiosk,must_change_password';
+function userFromProfile(p){ return { id:p.id, name:p.name, email:p.email, isAdmin:p.is_admin, isKiosk:p.is_kiosk, mustChangePassword:p.must_change_password }; }
+async function fetchBranding(slug){
+  try{ const { data } = await sb.rpc('get_branding',{ p_slug:slug }); return data||null; }catch(e){ return null; }
+}
+async function fetchMyProfile(authId){
+  const { data: brand } = await sb.rpc('get_my_branding');
+  if(!brand) return { error:'noprofile' };
+  const { data: profile } = await sb.from('profiles').select(PROFILE_COLS).eq('id', authId).maybeSingle();
+  return { brand, profile };
+}
+
+async function init(){
+  if(SUPABASE_URL.indexOf('YOUR-PROJECT')!==-1 || SUPABASE_ANON_KEY.indexOf('YOUR-ANON-KEY')!==-1){
+    renderSetupNeeded();
+    return;
+  }
+  const { data: sessionData } = await sb.auth.getSession();
+  if(sessionData && sessionData.session){
+    const r = await fetchMyProfile(sessionData.session.user.id);
+    if(r.error){ await sb.auth.signOut(); return startLoggedOut(); }
+    applyBranding(r.brand);
+    if(!r.brand.active){ renderBlocked(); return; }
+    if(!r.profile){ await sb.auth.signOut(); return startLoggedOut(); }
+    state.currentUser = userFromProfile(r.profile);
+    if(state.currentUser.mustChangePassword){
+      renderSetNewPassword(state.currentUser);
+      return;
+    }
+    await loadAll();
+    dispatchAfterLogin();
+  } else {
+    await startLoggedOut();
+  }
+}
+
+async function startLoggedOut(msg){
+  const slug = rememberedSlug();
+  if(!slug){ applyBranding(DEFAULT_BRAND); renderCompanyCode(msg); return; }
+  const b = await fetchBranding(slug);
+  if(!b){ forgetSlug(); applyBranding(DEFAULT_BRAND); renderCompanyCode('Onbekende bedrijfscode "'+slug+'".'); return; }
+  applyBranding(b);
+  renderLogin();
+}
+
+function renderSetupNeeded(){
+  const app=document.getElementById('app');
+  app.innerHTML=`
+    <div class="onboard-wrap">
+      <img src="${brandLogo()}" alt="${escapeHtml(brandName())}" class="onboard-mark-img">
+      <h1>Nog niet gekoppeld</h1>
+      <p>Deze app heeft nog geen database. Open het bestand, vul SUPABASE_URL en SUPABASE_ANON_KEY in bovenaan het script, en herlaad de pagina.</p>
+    </div>
+  `;
+}
+
+function renderBlocked(){
+  const app=document.getElementById('app');
+  app.innerHTML=`
+    <div class="onboard-wrap">
+      <img src="${brandLogo()}" alt="${escapeHtml(brandName())}" class="onboard-mark-img">
+      <h1>Account geblokkeerd</h1>
+      <p>De toegang van ${escapeHtml(brandName())} tot deze app is tijdelijk geblokkeerd. Neem contact op met Shift.</p>
+      <button class="btn-secondary" id="blockedOut">Uitloggen</button>
+    </div>`;
+  document.getElementById('blockedOut').onclick=async ()=>{ await sb.auth.signOut(); state.currentUser=null; startLoggedOut(); };
+}
+
+/* ================= AUTH ================= */
+
+function renderCompanyCode(msg){
+  const app=document.getElementById('app');
+  app.innerHTML=`
+    <div class="onboard-wrap">
+      <img src="${brandLogo()}" alt="Shift" class="onboard-mark-img">
+      <h1>Welkom bij Shift</h1>
+      <p>Vul de bedrijfscode in die je van je werkgever kreeg.</p>
+      <div class="card">
+        <label class="field-label">Bedrijfscode</label>
+        <input type="text" id="ccInput" placeholder="bv. mijnbedrijf" autocapitalize="none" autocomplete="off">
+        <div class="err-msg" id="ccErr" style="${msg?'':'display:none;'}">${msg?escapeHtml(msg):''}</div>
+        <button class="btn-primary" id="ccBtn">Verder</button>
+      </div>
+    </div>`;
+  const go=async ()=>{
+    const v=document.getElementById('ccInput').value.trim().toLowerCase();
+    const errEl=document.getElementById('ccErr');
+    if(!v){ errEl.textContent='Vul je bedrijfscode in.'; errEl.style.display='block'; return; }
+    const b=await fetchBranding(v);
+    if(!b){ errEl.textContent='Deze bedrijfscode bestaat niet.'; errEl.style.display='block'; return; }
+    applyBranding(b);
+    renderLogin();
+  };
+  document.getElementById('ccBtn').onclick=go;
+  document.getElementById('ccInput').addEventListener('keydown',e=>{ if(e.key==='Enter') go(); });
+}
+
+function renderLogin(){
+  const app=document.getElementById('app');
+  const blocked=state.tenant && state.tenant.active===false;
+  app.innerHTML=`
+    <div class="onboard-wrap">
+      <img src="${brandLogo()}" alt="${escapeHtml(brandName())}" class="onboard-mark-img">
+      <h1>${escapeHtml(brandName())}</h1>
+      <p>Log in met het e-mailadres en wachtwoord dat je van de administrator hebt gekregen.</p>
+      <div class="card" id="loginCard">
+        <label class="field-label">E-mailadres</label>
+        <input type="email" id="loginEmail" placeholder="naam@voorbeeld.be" autocomplete="username">
+        <label class="field-label">Wachtwoord</label>
+        <input type="password" id="loginPw" placeholder="Wachtwoord" autocomplete="current-password">
+        <div class="err-msg" id="loginErr" style="${blocked?'':'display:none;'}">${blocked?'Deze omgeving is tijdelijk geblokkeerd. Neem contact op met Shift.':''}</div>
+        <button class="btn-primary" id="loginBtn">Inloggen</button>
+      </div>
+      <p style="margin-top:14px;"><a href="#" id="otherCompany" style="color:var(--navy);font-weight:700;font-size:13px;">Ander bedrijf?</a></p>
+    </div>
+  `;
+  document.getElementById('loginBtn').onclick=handleLogin;
+  document.getElementById('loginPw').addEventListener('keydown', e=>{ if(e.key==='Enter') handleLogin(); });
+  document.getElementById('otherCompany').onclick=(e)=>{ e.preventDefault(); forgetSlug(); applyBranding(DEFAULT_BRAND); renderCompanyCode(); };
+}
+
+async function handleLogin(){
+  const errEl=document.getElementById('loginErr');
+  errEl.style.display='none';
+  const email=document.getElementById('loginEmail').value.trim().toLowerCase();
+  const pw=document.getElementById('loginPw').value;
+  const fail=(m)=>{ errEl.textContent=m; errEl.style.display='block'; };
+  if(!email || !pw){ fail('Vul e-mailadres en wachtwoord in.'); return; }
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pw });
+  if(error || !data.user){ fail('Onjuiste e-mail of wachtwoord.'); return; }
+  const r = await fetchMyProfile(data.user.id);
+  if(r.error || !r.profile && r.brand && r.brand.active){
+    await sb.auth.signOut();
+    fail('Account niet volledig aangemaakt. Contacteer de administrator.');
+    return;
+  }
+  // Dit account moet bij DEZE klant horen (de bedrijfscode in de link/het scherm).
+  if(state.tenant && state.tenant.id && r.brand.id!==state.tenant.id){
+    await sb.auth.signOut();
+    fail('Dit account hoort niet bij '+state.tenant.name+'. Kies "Ander bedrijf?" om de juiste omgeving te openen.');
+    return;
+  }
+  applyBranding(r.brand);
+  if(!r.brand.active){ await sb.auth.signOut(); renderBlocked(); return; }
+  const user=userFromProfile(r.profile);
+  if(user.mustChangePassword){ renderSetNewPassword(user); return; }
+  await logInAs(user);
+}
+
+function renderSetNewPassword(user){
+  const app=document.getElementById('app');
+  app.innerHTML=`
+    <div class="onboard-wrap">
+      <img src="${brandLogo()}" alt="${escapeHtml(brandName())}" class="onboard-mark-img">
+      <h1>Kies een wachtwoord</h1>
+      <p>Dit is je eerste keer inloggen, ${escapeHtml(user.name)}. Kies zelf een nieuw wachtwoord — dit gebruik je vanaf nu telkens om in te loggen.</p>
+      <div class="card">
+        <label class="field-label">Nieuw wachtwoord</label>
+        <input type="password" id="newPw1" placeholder="Minstens 6 tekens" autocomplete="new-password">
+        <label class="field-label">Bevestig nieuw wachtwoord</label>
+        <input type="password" id="newPw2" placeholder="Herhaal wachtwoord" autocomplete="new-password">
+        <div class="err-msg" id="npErr" style="display:none;"></div>
+        <button class="btn-primary" id="npBtn">Wachtwoord instellen en inloggen</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('npBtn').onclick=async ()=>{
+    const errEl=document.getElementById('npErr');
+    errEl.style.display='none';
+    const p1=document.getElementById('newPw1').value;
+    const p2=document.getElementById('newPw2').value;
+    if(p1.length<6){ errEl.textContent='Wachtwoord moet minstens 6 tekens zijn.'; errEl.style.display='block'; return; }
+    if(p1!==p2){ errEl.textContent='Wachtwoorden komen niet overeen.'; errEl.style.display='block'; return; }
+    const { error: pwErr } = await sb.auth.updateUser({ password: p1 });
+    if(pwErr){ errEl.textContent='Kon wachtwoord niet instellen: '+pwErr.message; errEl.style.display='block'; return; }
+    await sb.from('profiles').update({ must_change_password:false }).eq('id', user.id);
+    user.mustChangePassword=false;
+    await logInAs(user);
+  };
+}
+
+async function logInAs(user){
+  state.currentUser=user;
+  await loadAll();
+  dispatchAfterLogin();
+}
+
+
+/* ===== Persoonlijke gegevens (eerste login + admin-weergave) ===== */
+const PD_FIELDS=[['lastName','Naam','text','Achternaam'],['firstName','Voornaam','text','Voornaam'],['birthDate','Geboortedatum','date',''],['street','Straat en huisnummer','text','Bv. Dorpsstraat 12 bus 3'],['postal','Postcode','text','Bv. 2000'],['city','Gemeente','text','Bv. Antwerpen']];
+function needsPersonalData(u){
+  if(!u || u.isKiosk || u.isAdmin || u.isVirtual || state.impersonatingFrom) return false;
+  const fresh=state.users.find(x=>x.id===u.id);
+  const p=(fresh&&fresh.personal)||u.personal;
+  return !(p && p.completed);
+}
+function personalFormHtml(p, pre){
+  p=p||{};
+  return PD_FIELDS.map(([k,label,type,ph],i)=>'<label class="field-label"'+(i===0?' style="margin-top:0;"':'')+'>'+label+'</label><input type="'+type+'" id="'+pre+k+'" value="'+escapeHtml(p[k]||'')+'" placeholder="'+escapeHtml(ph)+'"'+(type==='date'?' max="'+toDateKeyFromDate(new Date())+'" style="width:100%; padding:12px 14px; font-size:15px; border-radius:10px; border:1.5px solid var(--line); font-family:inherit; background:#fff; box-sizing:border-box;"':'')+' autocomplete="off">').join('');
+}
+function readPersonalForm(pre){
+  const data={};
+  for(const [k,label] of PD_FIELDS){
+    const v=document.getElementById(pre+k).value.trim();
+    if(!v) return {error:'Vul "'+label+'" in.'};
+    data[k]=v;
+  }
+  if(!/^\d{4}$/.test(data.postal)) return {error:'Een Belgische postcode bestaat uit 4 cijfers.'};
+  return {data};
+}
+function renderPersonalData(user){
+  const app=document.getElementById('app');
+  app.innerHTML=`
+    <div class="onboard-wrap">
+      <img src="${brandLogo()}" alt="${escapeHtml(brandName())}" class="onboard-mark-img">
+      <h1>Jouw gegevens</h1>
+      <p>Welkom ${escapeHtml(user.name)}! Vul eenmalig je persoonlijke gegevens in. Ze worden enkel gebruikt voor je arbeidscontract en zijn alleen zichtbaar voor de administrator.</p>
+      <div class="card">
+        ${personalFormHtml(user.personal,'pd_')}
+        <div class="err-msg" id="pdErr" style="display:none;"></div>
+        <button class="btn-primary" id="pdBtn">Opslaan en verder</button>
+      </div>
+    </div>`;
+  document.getElementById('pdBtn').onclick=async ()=>{
+    const errEl=document.getElementById('pdErr'); errEl.style.display='none';
+    const r=readPersonalForm('pd_');
+    if(r.error){ errEl.textContent=r.error; errEl.style.display='block'; return; }
+    const msg=await savePersonalData(user.id, r.data);
+    if(msg){ errEl.textContent=msg; errEl.style.display='block'; return; }
+    dispatchAfterLogin();
+  };
+}
+function openPersonalDataModal(userId){
+  const u=state.users.find(x=>x.id===userId); if(!u) return;
+  const root=document.getElementById('modalRoot');
+  const ov=document.createElement('div'); ov.className='modal-overlay';
+  ov.innerHTML='<div class="modal-card"><div class="modal-head"><div class="modal-date">'+escapeHtml(u.name)+'</div><button class="modal-close">×</button></div>'
+    +'<div class="modal-sub">'+escapeHtml(u.email||'')+(u.personal&&u.personal.completed?'':' · <b>Gegevens nog niet ingevuld</b>')+'</div>'
+    +personalFormHtml(u.personal,'pm_')
+    +'<div class="err-msg" id="pmErr" style="display:none; margin-top:10px;"></div><div class="info-msg" id="pmOk" style="display:none; margin-top:10px;">Opgeslagen.</div>'
+    +'<div class="form-btn-row"><button class="btn-cancel" id="pmClose">Sluiten</button><button class="cta-green" id="pmSave">Opslaan</button></div></div>';
+  root.innerHTML=''; root.appendChild(ov);
+  const close=()=>{ root.innerHTML=''; if(document.getElementById('userList')) drawUserList(); };
+  ov.addEventListener('click',e=>{ if(e.target===ov) close(); });
+  ov.querySelector('.modal-close').onclick=close; ov.querySelector('#pmClose').onclick=close;
+  ov.querySelector('#pmSave').onclick=async ()=>{
+    const errEl=ov.querySelector('#pmErr'), okEl=ov.querySelector('#pmOk'); errEl.style.display='none'; okEl.style.display='none';
+    const r=readPersonalForm('pm_');
+    if(r.error){ errEl.textContent=r.error; errEl.style.display='block'; return; }
+    const msg=await savePersonalData(u.id, r.data);
+    if(msg){ errEl.textContent=msg; errEl.style.display='block'; return; }
+    okEl.style.display='block';
+  };
+}
+async function savePersonalData(userId, data){
+  const { error } = await sb.from('personal_data').upsert({
+    user_id:userId, last_name:data.lastName, first_name:data.firstName, birth_date:data.birthDate,
+    street:data.street, postal:data.postal, city:data.city });
+  if(error) return 'Opslaan mislukt: '+error.message;
+  const u=state.users.find(x=>x.id===userId);
+  if(u) u.personal=Object.assign({}, data, {completed:true});
+  if(state.currentUser && state.currentUser.id===userId) state.currentUser.personal=Object.assign({}, data, {completed:true});
+  return null;
+}
+
+function dispatchAfterLogin(){
+  if(needsPersonalData(state.currentUser)){ renderPersonalData(state.currentUser); return; }
+  if(state.currentUser.isKiosk){ renderKioskScreen(); }
+  else { renderApp(); }
+}
+
+function isRealAdmin(){
+  return state.impersonatingFrom ? state.impersonatingFrom.isAdmin : state.currentUser.isAdmin;
+}
+
+function quickSwitchTo(user){
+  if(!state.impersonatingFrom) state.impersonatingFrom=state.currentUser;
+  state.currentUser=user;
+  document.getElementById('modalRoot') && (document.getElementById('modalRoot').innerHTML='');
+  dispatchAfterLogin();
+}
+
+async function impersonateRealUser(userId){
+  const { data: sessionData } = await sb.auth.getSession();
+  if(!sessionData || !sessionData.session) return;
+  const result = await callEdgeFunction('admin-impersonate', { targetUserId:userId });
+  if(!result.success){ showMessage(result.error || 'Kon niet inloggen als deze medewerker.'); return; }
+  const { data: verified, error: verErr } = await sb.auth.verifyOtp({ token_hash: result.hashed_token, type:'email' });
+  if(verErr || !verified || !verified.session){
+    showMessage('Kon geen sessie starten voor deze medewerker.');
+    return;
+  }
+  if(!state.impersonatingSession){
+    state.impersonatingSession = sessionData.session;
+    state.impersonatingFrom = state.currentUser;
+  }
+  const { data: profile } = await sb.from('profiles').select('id,name,email,is_admin,is_kiosk,must_change_password').eq('id', userId).maybeSingle();
+  state.currentUser = profile
+    ? { id:profile.id, name:profile.name, email:profile.email, isAdmin:profile.is_admin, isKiosk:profile.is_kiosk, mustChangePassword:profile.must_change_password }
+    : state.currentUser;
+  await loadAll();
+  document.getElementById('modalRoot') && (document.getElementById('modalRoot').innerHTML='');
+  dispatchAfterLogin();
+}
+
+async function restoreFromImpersonation(){
+  if(!state.impersonatingFrom) return;
+  if(state.impersonatingSession){
+    await sb.auth.setSession(state.impersonatingSession);
+    state.impersonatingSession=null;
+    state.currentUser=state.impersonatingFrom;
+    state.impersonatingFrom=null;
+    await loadAll();
+  } else {
+    state.currentUser=state.impersonatingFrom;
+    state.impersonatingFrom=null;
+  }
+  dispatchAfterLogin();
+}
+
+function openQuickSwitchModal(){
+  const root=document.getElementById('modalRoot');
+  const overlay=document.createElement('div');
+  overlay.className='modal-overlay';
+  const realAdmin=state.impersonatingFrom || state.currentUser;
+  const options=[
+    {id:realAdmin.id, name:'Admin', email:realAdmin.name, isAdmin:true, isKiosk:false, mustChangePassword:false},
+    {id:'virtual-werknemer', name:'Werknemer', email:'Voorbeeldweergave op basis van je eigen account', isAdmin:false, isKiosk:false, mustChangePassword:false, isVirtual:true},
+    {id:'virtual-kiosk', name:brandName(), email:'Voorbeeldweergave op basis van je eigen account', isAdmin:false, isKiosk:true, mustChangePassword:false, isVirtual:true},
+  ];
+  let rowsHtml='';
+  options.forEach(u=>{
+    rowsHtml+='<button class="staff-row" style="width:100%;background:none;border:none;cursor:pointer;text-align:left;font-family:inherit;" data-switch="'+u.id+'"><div><div class="sr-name">'+escapeHtml(u.name)+'</div><div class="sr-status">'+escapeHtml(u.email)+'</div></div><span class="m-arrow">\u203a</span></button>';
+  });
+  overlay.innerHTML=`
+    <div class="modal-card">
+      <div class="modal-head"><div class="modal-date">Wissel gebruiker (test)</div><button class="modal-close">\u00d7</button></div>
+      <div class="modal-sub">Bekijk de app als admin, werknemer of kiosk — telkens op basis van je eigen account. Enkel voor testen; je eigen adminaccount blijft ingelogd.</div>
+      ${rowsHtml}
+    </div>
+  `;
+  overlay.addEventListener('click',(e)=>{ if(e.target===overlay) root.innerHTML=''; });
+  overlay.querySelector('.modal-close').onclick=()=>{ root.innerHTML=''; };
+  root.innerHTML='';
+  root.appendChild(overlay);
+  overlay.querySelectorAll('[data-switch]').forEach(btn=>{
+    btn.onclick=()=>{
+      const u=options.find(x=>x.id===btn.getAttribute('data-switch'));
+      if(u) quickSwitchTo(u);
+    };
+  });
+}
+
+function openLoginAsEmployeeModal(){
+  const root=document.getElementById('modalRoot');
+  const overlay=document.createElement('div');
+  overlay.className='modal-overlay';
+  const employees=state.users.filter(u=>!u.isAdmin && !u.isKiosk);
+  let rowsHtml;
+  if(employees.length===0){
+    rowsHtml='<div class="no-users-hint">Nog geen medewerkers aangemaakt. Ga naar Beheer om iemand toe te voegen.</div>';
+  } else {
+    rowsHtml='';
+    employees.forEach(u=>{
+      rowsHtml+='<button class="staff-row" style="width:100%;background:none;border:none;cursor:pointer;text-align:left;font-family:inherit;" data-login="'+u.id+'"><div><div class="sr-name">'+escapeHtml(u.name)+'</div><div class="sr-status">'+escapeHtml(u.email)+'</div></div><span class="m-arrow">\u203a</span></button>';
+    });
+  }
+  overlay.innerHTML=`
+    <div class="modal-card">
+      <div class="modal-head"><div class="modal-date">Inloggen als werknemer</div><button class="modal-close">\u00d7</button></div>
+      <div class="modal-sub">Kies een medewerker om als die persoon in te loggen. Je eigen adminaccount blijft veilig ingelogd op de achtergrond.</div>
+      ${rowsHtml}
+    </div>
+  `;
+  overlay.addEventListener('click',(e)=>{ if(e.target===overlay) root.innerHTML=''; });
+  overlay.querySelector('.modal-close').onclick=()=>{ root.innerHTML=''; };
+  root.innerHTML='';
+  root.appendChild(overlay);
+  overlay.querySelectorAll('[data-login]').forEach(btn=>{
+    btn.onclick=()=>{
+      impersonateRealUser(btn.getAttribute('data-login'));
+    };
+  });
+}
+
+/* In-app dialogen (de ingebouwde confirm()/alert() worden in veel previews/webviews geblokkeerd) */
+function askConfirm(message, okLabel){
+  return new Promise(resolve=>{
+    const root=document.getElementById('modalRoot')||document.body;
+    const ov=document.createElement('div'); ov.className='modal-overlay'; ov.style.zIndex=90;
+    ov.innerHTML='<div class="modal-card"><div style="font-size:16px; font-weight:700; margin:6px 0 16px;">'+escapeHtml(message)+'</div><div class="form-btn-row"><button class="btn-cancel" id="acNo">Annuleren</button><button class="cta-green" id="acYes">'+escapeHtml(okLabel||'Ja')+'</button></div></div>';
+    root.appendChild(ov);
+    const done=v=>{ ov.remove(); resolve(v); };
+    ov.querySelector('#acNo').onclick=()=>done(false);
+    ov.querySelector('#acYes').onclick=()=>done(true);
+    ov.addEventListener('click',e=>{ if(e.target===ov) done(false); });
+  });
+}
+function showMessage(message){
+  return new Promise(resolve=>{
+    const root=document.getElementById('modalRoot')||document.body;
+    const ov=document.createElement('div'); ov.className='modal-overlay'; ov.style.zIndex=90;
+    ov.innerHTML='<div class="modal-card"><div style="font-size:15px; margin:6px 0 16px; user-select:text;">'+escapeHtml(message)+'</div><div class="form-btn-row"><button class="cta-green" id="smOk">OK</button></div></div>';
+    root.appendChild(ov);
+    const done=()=>{ ov.remove(); resolve(); };
+    ov.querySelector('#smOk').onclick=done;
+    ov.addEventListener('click',e=>{ if(e.target===ov) done(); });
+  });
+}
+
+async function logout(){
+  if(!await askConfirm('Wil je uitloggen?','Uitloggen')) return;
+  await sb.auth.signOut();
+  state.currentUser=null;
+  state.impersonatingFrom=null;
+  state.impersonatingSession=null;
+  renderLogin();
+}
+
+function shiftMonth(delta){
+  state.calMonth+=delta;
+  if(state.calMonth<0){state.calMonth=11; state.calYear--;}
+  if(state.calMonth>11){state.calMonth=0; state.calYear++;}
+}
+
+function drawPlanningCalendar(){
+  const y=state.calYear, m=state.calMonth;
+  document.getElementById('pMonthLabel').textContent = MAANDEN[m]+' '+y;
+  const grid=document.getElementById('pCalGrid');
+  grid.innerHTML='';
+  const first=new Date(y,m,1);
+  let startDow=first.getDay();
+  startDow = startDow===0 ? 6 : startDow-1;
+  const daysInMonth=new Date(y,m+1,0).getDate();
+  for(let i=0;i<startDow;i++){ const e=document.createElement('div'); e.className='cal-day empty'; grid.appendChild(e); }
+  for(let d=1; d<=daysInMonth; d++){
+    const key=dateKey(y,m,d);
+    const count=(state.schedule[key]||[]).length;
+    const availCount=state.users.filter(u=>(state.availability[u.id]||{})[key]==='available').length;
+    const cell=document.createElement('div');
+    cell.className='cal-day';
+    cell.innerHTML='<span>'+d+'</span>'
+      +(count>0?'<span class="count-badge">'+count+'</span>':'')
+      +(availCount>0?'<span class="avail-badge">'+availCount+'</span>':'');
+    cell.onclick=()=>openDayModal(y,m,d);
+    grid.appendChild(cell);
+  }
+}function openDayModal(y,m,d){
+  const key=dateKey(y,m,d);
+  const ym=ymKey(y,m);
+  const weekdayNames=['zondag','maandag','dinsdag','woensdag','donderdag','vrijdag','zaterdag'];
+  const dow=weekdayNames[new Date(y,m,d).getDay()];
+  const root=document.getElementById('modalRoot');
+  const overlay=document.createElement('div');
+  overlay.className='modal-overlay';
+  overlay.innerHTML=`
+    <div class="modal-card">
+      <div class="modal-head">
+        <div class="modal-date">${dow} ${d} ${MAANDEN[m]}</div>
+        <button class="modal-close">×</button>
+      </div>
+      <div class="modal-sub">Vink de naam van elke medewerker aan die deze dag moet werken.</div>
+      <div id="staffRows"></div>
+    </div>
+  `;
+  overlay.addEventListener('click',(e)=>{ if(e.target===overlay) root.innerHTML=''; });
+  overlay.querySelector('.modal-close').onclick=()=>{ root.innerHTML=''; };
+  root.innerHTML='';
+  root.appendChild(overlay);
+
+  const rowsEl=overlay.querySelector('#staffRows');
+  const staffUsers = state.users.filter(u=>!u.isAdmin || state.availability[u.id]);
+  const list = state.users.length ? state.users : [];
+  if(list.length===0){
+    rowsEl.innerHTML='<div class="no-users-hint">Nog geen medewerkers aangemaakt. Ga naar Beheer om iemand toe te voegen.</div>';
+    return;
+  }
+  function draw(){
+    rowsEl.innerHTML='';
+    const assignedList = state.schedule[key] || [];
+    list.forEach(u=>{
+      const status = (state.availability[u.id]||{})[key];
+      const isAssigned = assignedList.some(a=>a.staffId===u.id);
+      let statusText='Onbekend', statusCls='';
+      if(status==='available'){ statusText='Beschikbaar'; statusCls='avail'; }
+      const row=document.createElement('div');
+      row.className='staff-row';
+      row.innerHTML=`
+        <div>
+          <div class="sr-name">${escapeHtml(u.name)}</div>
+          <div class="sr-status ${statusCls}">${statusText}</div>
+        </div>
+        <button class="check-btn ${isAssigned?'checked':''}" aria-label="inplannen">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"></path></svg>
+        </button>
+      `;
+      row.querySelector('.check-btn').onclick=async ()=>{
+        if(!state.schedule[key]) state.schedule[key]=[];
+        const already=state.schedule[key].some(a=>a.staffId===u.id);
+        if(already){
+          state.schedule[key]=state.schedule[key].filter(a=>a.staffId!==u.id);
+          await sb.from('schedule').delete().eq('date', key).eq('user_id', u.id);
+        } else {
+          state.schedule[key].push({staffId:u.id});
+          await sb.from('schedule').upsert({date:key, user_id:u.id});
+        }
+        draw();
+        drawPlanningCalendar();
+      };
+      rowsEl.appendChild(row);
+    });
+  }
+  draw();
+}
+async function createUser(){
+  const errEl=document.getElementById('nuErr');
+  const okEl=document.getElementById('nuOk');
+  errEl.style.display='none'; okEl.style.display='none';
+  const name=document.getElementById('nuName').value.trim();
+  const email=document.getElementById('nuEmail').value.trim().toLowerCase();
+  const pw=document.getElementById('nuPw').value;
+  const isAdmin=document.getElementById('nuAdmin').checked;
+  const isKiosk=document.getElementById('nuKiosk').checked;
+  if(!name || !email){ errEl.textContent='Vul naam en e-mailadres in.'; errEl.style.display='block'; return; }
+  if(!pw || pw.length<6){ errEl.textContent='Kies een tijdelijk wachtwoord van minstens 6 tekens (of gebruik Genereer).'; errEl.style.display='block'; return; }
+  if(state.users.some(u=>u.email===email)){ errEl.textContent='Er bestaat al een account met dit e-mailadres.'; errEl.style.display='block'; return; }
+  const result=await callEdgeFunction('admin-users', {action:'create', name, email, tempPassword:pw, isAdmin, isKiosk});
+  if(!result.success){ errEl.textContent=result.error||'Aanmaken mislukt.'; errEl.style.display='block'; return; }
+  state.users.push({id:result.userId, name, email, isAdmin, isKiosk, mustChangePassword:true});
+  okEl.textContent='Account aangemaakt voor '+name+'. Geef dit tijdelijk wachtwoord door: '+pw;
+  okEl.style.display='block';
+  document.getElementById('nuName').value='';
+  document.getElementById('nuEmail').value='';
+  document.getElementById('nuPw').value='';
+  document.getElementById('nuAdmin').checked=false;
+  document.getElementById('nuKiosk').checked=false;
+  drawUserList();
+}function drawUserList(){
+  const wrap=document.getElementById('userList');
+  if(state.users.length===0){
+    wrap.innerHTML='<div class="empty-state">Nog geen medewerkers toegevoegd.</div>';
+    return;
+  }
+  wrap.innerHTML='';
+  state.users.forEach(u=>{
+    const row=document.createElement('div');
+    row.className='user-row';
+    row.style.flexDirection='column';
+    row.style.alignItems='stretch';
+    row.innerHTML=`
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div class="u-info" data-info="${u.id}" style="cursor:pointer; flex:1;">
+          <span class="u-name">${escapeHtml(u.name)}</span>
+          ${u.isAdmin?'<span class="badge admin">Admin</span>':''}
+          ${u.isKiosk?'<span class="badge admin" style="background:var(--amber);color:var(--amber-ink);">Kiosk</span>':''}
+          ${u.mustChangePassword?'<span class="badge pending">Nog niet ingelogd</span>':''}
+          ${(!u.isKiosk && !u.isAdmin && !(u.personal&&u.personal.completed))?'<span class="badge pending">Gegevens ontbreken</span>':''}
+          <div class="u-email">${escapeHtml(u.email)} ${u.isKiosk?'':'· <span style="color:var(--navy); font-weight:700;">Gegevens ›</span>'}</div>
+        </div>
+        <button class="btn-ghost-sm" data-reset="${u.id}">Wachtwoord resetten</button>
+      </div>
+      <div class="reset-panel" id="resetPanel-${u.id}" style="display:none;">
+        <label class="field-label">Nieuw tijdelijk wachtwoord</label>
+        <div class="field-row">
+          <div><input type="text" id="resetPw-${u.id}" placeholder="Nieuw tijdelijk wachtwoord"></div>
+          <button class="btn-ghost-sm" data-gen="${u.id}">Genereer</button>
+        </div>
+        <button class="btn-secondary" data-confirm="${u.id}">Reset bevestigen</button>
+      </div>
+    `;
+    wrap.appendChild(row);
+  });
+  wrap.querySelectorAll('[data-info]').forEach(el2=>{ const id=el2.getAttribute('data-info'); const u=state.users.find(x=>x.id===id); if(u&&!u.isKiosk) el2.onclick=()=>openPersonalDataModal(id); });
+  wrap.querySelectorAll('[data-reset]').forEach(btn=>{
+    btn.onclick=()=>{
+      const id=btn.getAttribute('data-reset');
+      const panel=document.getElementById('resetPanel-'+id);
+      panel.style.display = panel.style.display==='none' ? 'block' : 'none';
+    };
+  });
+  wrap.querySelectorAll('[data-gen]').forEach(btn=>{
+    btn.onclick=()=>{
+      const id=btn.getAttribute('data-gen');
+      document.getElementById('resetPw-'+id).value=genTempPassword();
+    };
+  });
+  wrap.querySelectorAll('[data-confirm]').forEach(btn=>{
+    btn.onclick=async ()=>{
+      const id=btn.getAttribute('data-confirm');
+      const pw=document.getElementById('resetPw-'+id).value;
+      if(!pw || pw.length<6){ showMessage('Kies een tijdelijk wachtwoord van minstens 6 tekens.'); return; }
+      const u=state.users.find(x=>x.id===id);
+      const result=await callEdgeFunction('admin-users', {action:'reset_password', userId:id, tempPassword:pw});
+      if(!result.success){ showMessage(result.error||'Reset mislukt.'); return; }
+      u.mustChangePassword=true;
+      showMessage('Wachtwoord gereset. Geef dit nieuwe tijdelijke wachtwoord door aan '+u.name+': '+pw);
+      drawUserList();
+    };
+  });
+}function fmtTime(ts){
+  const d=new Date(ts);
+  return d.toLocaleDateString('nl-BE',{day:'numeric',month:'short'})+' · '+d.toLocaleTimeString('nl-BE',{hour:'2-digit',minute:'2-digit'});
+}function drawMessages(){
+  const list=document.getElementById('msgList');
+  if(state.messages.length===0){
+    list.innerHTML='<div class="empty-state">Nog geen berichten. Plaats het eerste!</div>';
+    return;
+  }
+  list.innerHTML='';
+  state.messages.forEach(msg=>{
+    const item=document.createElement('div');
+    item.className='msg-item';
+    item.innerHTML=`
+      <div class="m-head">
+        <span class="m-author">${escapeHtml(msg.author)}</span>
+        <span class="m-time">${fmtTime(msg.ts)}</span>
+      </div>
+      <div class="m-text">${escapeHtml(msg.text)}</div>
+    `;
+    list.appendChild(item);
+  });
+}
+
+/* ================= ICONS ================= */
+const bellSvg='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>';
+const calendarXIcon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 9h18M8 3v4M16 3v4M9.5 14.5l5 5M14.5 14.5l-5 5"></path></svg>';
+const calendarCheckIcon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 9h18M8 3v4M16 3v4"></path><path d="M9 14l2 2 4-4"></path></svg>';
+const peopleIcon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"></circle><path d="M2 20c0-3.5 3-6 7-6s7 2.5 7 6"></path><circle cx="17" cy="8" r="2.5"></circle><path d="M22 20c0-2.8-1.8-4.9-4.5-5.7"></path></svg>';
+const swapIcon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h11l-3-3"></path><path d="M17 17H6l3 3"></path></svg>';
+const contractIcon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l4 4v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"></path><path d="M13 3v5h5"></path><path d="M9 13h6M9 17h4"></path></svg>';
+const clockIcon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 3"></path></svg>';
+const boardIcon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"></rect><path d="M8 9h8M8 13h8M8 17h4"></path></svg>';
+const userIcon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5"></circle><path d="M4.5 20c1.5-4 4.2-6 7.5-6s6 2 7.5 6"></path></svg>';
+const personIcon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c1.8-4.5 5-7 8-7s6.2 2.5 8 7"></path></svg>';
+
+/* ================= DATE HELPERS ================= */
+const MAANDEN_KORT=['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
+function addDays(date, n){ const d=new Date(date); d.setDate(d.getDate()+n); return d; }
+function startOfWeekMonday(date){ const d=new Date(date); const day=(d.getDay()+6)%7; d.setDate(d.getDate()-day); d.setHours(0,0,0,0); return d; }
+function toDateKeyFromDate(d){ return dateKey(d.getFullYear(), d.getMonth(), d.getDate()); }
+function capFirst(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+function formatDateLong(dk){
+  const [y,m,d]=dk.split('-').map(Number);
+  const wd=['zondag','maandag','dinsdag','woensdag','donderdag','vrijdag','zaterdag'][new Date(y,m-1,d).getDay()];
+  return wd+' '+d+' '+MAANDEN[m-1];
+}
+
+/* ================= KIOSK / QR-KLOKSYSTEEM ================= */
+const KIOSK_WINDOW_MS = 15*60*1000;
+
+async function ensureKioskSecret(){
+  if(state.kioskSecret) return state.kioskSecret;
+  const secret = randomSalt()+randomSalt();
+  const { error } = await sb.from('kiosk_secret').upsert({ tenant_id:state.tenant.id, secret });
+  if(!error) state.kioskSecret = secret;
+  else {
+    // mogelijk al aangemaakt door een andere sessie ondertussen — gewoon opnieuw ophalen
+    const { data } = await sb.from('kiosk_secret').select('secret').maybeSingle();
+    state.kioskSecret = data ? data.secret : null;
+  }
+  return state.kioskSecret;
+}
+
+function currentWindowIndex(){ return Math.floor(Date.now()/KIOSK_WINDOW_MS); }
+
+async function computeKioskToken(windowIndex){
+  const h = await sha256Hex(state.kioskSecret+':'+windowIndex);
+  return h.slice(0,20);
+}
+
+let _kioskLastWindow=null;
+async function renderKioskScreen(){
+  const app=document.getElementById('app');
+  app.innerHTML=`
+    <div class="kiosk-wrap">
+      <div class="kiosk-card">
+        <div class="kiosk-title">${escapeHtml(brandName())}</div>
+        <div id="kioskQr" class="kiosk-qr"></div>
+        <div class="kiosk-hint">Scan bij het in- of uitklokken</div>
+        <button class="kiosk-logout" id="kioskLogoutBtn">${state.impersonatingFrom ? 'Terug naar admin (test)' : 'Uitloggen'}</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('kioskLogoutBtn').onclick=state.impersonatingFrom ? restoreFromImpersonation : logout;
+  if(!state.kioskSecret) await ensureKioskSecret();
+  _kioskLastWindow=null;
+  await kioskTick();
+  if(window._kioskIv) clearInterval(window._kioskIv);
+  window._kioskIv=setInterval(kioskTick, 4000);
+}
+
+async function kioskTick(){
+  const wi=currentWindowIndex();
+  if(wi===_kioskLastWindow) return;
+  _kioskLastWindow=wi;
+  const token=await computeKioskToken(wi);
+  const payload='SHIFTKIOSK:'+wi+':'+token;
+  const el=document.getElementById('kioskQr');
+  if(!el) return;
+  el.innerHTML='';
+  new QRCode(el, { text:payload, width:260, height:260, correctLevel:QRCode.CorrectLevel.M });
+}
+
+/* ---- clock in/out (staff side) ---- */
+const MAX_SESSION_MS=14*3600000;   // een sessie langer dan 14u = vergeten uit te klokken
+const MIN_RESCAN_MS=60*1000;       // dubbele scan binnen 1 minuut wordt genegeerd
+function getClockStatus(userId){
+  const entries=state.timeEntries.filter(e=>e.userId===userId).sort((a,b)=>a.ts-b.ts);
+  if(entries.length===0) return {status:'out', since:null, stale:false};
+  const last=entries[entries.length-1];
+  const stale = last.type==='in' && Date.now()-last.ts>MAX_SESSION_MS;
+  return {status: (last.type==='in' && !stale) ? 'in' : 'out', since:last.ts, stale};
+}
+
+function computeSessions(userId){
+  const entries=state.timeEntries.filter(e=>e.userId===userId).sort((a,b)=>a.ts-b.ts);
+  const sessions=[];
+  let openIn=null;
+  const incomplete=e=>({inId:e.id, outId:null, inTs:e.ts, outTs:null, hours:null, stale:true});
+  entries.forEach(e=>{
+    if(e.type==='in'){
+      if(openIn!==null) sessions.push(incomplete(openIn));   // vorige inklok zonder uitklok
+      openIn=e;
+    } else if(e.type==='out' && openIn!==null){
+      if(e.ts-openIn.ts>MAX_SESSION_MS){ sessions.push(incomplete(openIn)); }  // onrealistisch lang: niet zomaar optellen
+      else sessions.push({inId:openIn.id, outId:e.id, inTs:openIn.ts, outTs:e.ts, hours:(e.ts-openIn.ts)/3600000, stale:false});
+      openIn=null;
+    }
+  });
+  if(openIn!==null){ sessions.push({inId:openIn.id, outId:null, inTs:openIn.ts, outTs:null, hours:null, stale:Date.now()-openIn.ts>MAX_SESSION_MS}); }
+  return sessions.reverse();
+}
+
+function staleSessions(){
+  const out=[];
+  state.users.filter(u=>!u.isKiosk).forEach(u=>{ computeSessions(u.id).forEach(x=>{ if(x.stale) out.push({user:u, session:x}); }); });
+  return out.sort((a,b)=>a.session.inTs-b.session.inTs);
+}
+
+function fmtDateTime(ts){
+  const d=new Date(ts);
+  return d.toLocaleDateString('nl-BE',{day:'numeric',month:'short'})+' '+d.toLocaleTimeString('nl-BE',{hour:'2-digit',minute:'2-digit'});
+}
+function fmtHours(h){
+  if(h===null||h===undefined) return '—';
+  const hh=Math.floor(h);
+  const mm=Math.round((h-hh)*60);
+  return hh+'u'+String(mm).padStart(2,'0');
+}
+
+
+/* ===== Admin: tab Werkuren = enkel Registraties (klokken doen enkel werknemers) ===== */
+
+/* ===== Admin Werkuren: scherm 1 "Uitbetaling" + scherm 2 "Uren invoeren" ===== */
+function parseHoursInput(str){
+  str=String(str||'').trim().toLowerCase().replace(',','.');
+  if(!str) return 0;
+  const m=str.match(/^(\d+)\s*[u:h]\s*(\d{1,2})?$/);
+  if(m) return parseInt(m[1],10)+(m[2]?parseInt(m[2],10)/60:0);
+  const n=parseFloat(str); return isNaN(n)?NaN:n;
+}
+function hoursToInput(x){ return x? String(Math.round(x*100)/100).replace('.',','):''; }
+const r4=x=>Math.round(x*10000)/10000;
+
+async function setTotalPaid(uid_, newTotal){
+  const {ledger}=computeWeeklyLedger();
+  const ph=state.paidHours[uid_]=state.paidHours[uid_]||{};
+  const cur=Object.values(ph).reduce((a,b)=>a+(+b||0),0);
+  let delta=r4(newTotal-cur);
+  const changed={};
+  if(delta>0.00001){
+    // eerst de oudste weken met openstaande uren aanvullen
+    for(const w of ledger){
+      if(delta<=0.00001) break;
+      const v=w.rows[uid_]?w.rows[uid_].verschil:0;
+      if(v>0.00001){ const add=Math.min(v,delta); ph[w.weekKey]=r4((ph[w.weekKey]||0)+add); changed[w.weekKey]=ph[w.weekKey]; delta=r4(delta-add); }
+    }
+    if(delta>0.00001){
+      const last=ledger.length?ledger[ledger.length-1].weekKey:toDateKeyFromDate(startOfWeekMonday(new Date()));
+      ph[last]=r4((ph[last]||0)+delta); changed[last]=ph[last];
+    }
+  } else if(delta<-0.00001){
+    let rem=-delta;
+    Object.keys(ph).sort().reverse().forEach(k=>{
+      if(rem<=0.00001) return;
+      const take=Math.min(ph[k]||0,rem);
+      if(take>0){ ph[k]=r4((ph[k]||0)-take); changed[k]=ph[k]; rem=r4(rem-take); }
+    });
+  }
+  await persistPaid(uid_, changed);
+}
+
+function drawAdminWerkuren(body){
+  if(!state.currentUser.isAdmin){ body.innerHTML='<div class="empty-state">Geen toegang.</div>'; return; }
+  const view=state.adminWerkurenView||'uitbetaling';
+  const st=on=>'flex:1; padding:11px 6px; border-radius:10px; font-family:inherit; font-weight:700; font-size:14px; cursor:pointer; border:1.5px solid '+(on?'var(--navy)':'var(--line)')+'; background:'+(on?'var(--navy)':'#fff')+'; color:'+(on?'#fff':'var(--ink)')+';';
+  body.innerHTML='<div style="display:flex; gap:8px; margin:0 16px 14px;"><button type="button" id="awSegPay" style="'+st(view==='uitbetaling')+'">Uitbetaling</button><button type="button" id="awSegIn" style="'+st(view==='invoer')+'">Uren invoeren</button></div><div id="awBody"></div>';
+  document.getElementById('awSegPay').onclick=()=>{ state.adminWerkurenView='uitbetaling'; drawAdminWerkuren(body); };
+  document.getElementById('awSegIn').onclick=()=>{ state.adminWerkurenView='invoer'; drawAdminWerkuren(body); };
+  const el=document.getElementById('awBody');
+  const stale=staleSessions();
+  if(stale.length){
+    const warn=document.createElement('div');
+    warn.className='card'; warn.style.cssText='margin:0 16px 14px; border:1.5px solid #b91c1c; background:#fef2f2;';
+    warn.innerHTML='<div style="font-weight:800; color:#b91c1c;">⚠ '+stale.length+' registratie'+(stale.length===1?'':'s')+' zonder uitklok</div><div class="section-hint" style="margin:4px 0 10px;">Deze uren tellen nog niet mee. Vul de eindtijd aan bij Uren invoeren.</div><button class="btn-secondary" id="staleBtn" style="margin:0; width:100%;">Corrigeren</button>';
+    el.parentNode.insertBefore(warn, el);
+    warn.querySelector('#staleBtn').onclick=()=>{
+      const mon=startOfWeekMonday(new Date(stale[0].session.inTs));
+      state.hoursWeekStart=mon; state.adminWerkurenView='invoer'; drawAdminWerkuren(body);
+    };
+  }
+  if(view==='uitbetaling') drawUitbetalingInto(el); else drawUrenInvoerInto(el);
+}
+
+/* ---------- Scherm 1: enkel medewerkers met openstaande uren ---------- */
+function drawUitbetalingInto(el){
+  if(!el || !el.isConnected) return;
+  const {staffUsers, ledger, eindsaldo}=computeWeeklyLedger();
+  if(!ledger.length){ el.innerHTML='<div class="empty-state">Nog geen gewerkte uren.</div>'; return; }
+  let idx=ledger.findIndex(w=>w.weekKey===state.payWeekKey);
+  if(idx<0){
+    // standaard: laatste week waarin iemand gewerkt heeft
+    idx=ledger.length-1;
+    for(let i=ledger.length-1;i>=0;i--){ if(staffUsers.some(u=>ledger[i].rows[u.id].gewerkt>0.001)){ idx=i; break; } }
+    state.payWeekKey=ledger[idx].weekKey;
+  }
+  const week=ledger[idx];
+  const s=new Date(week.weekKey+'T00:00:00'), e=addDays(s,6);
+  const label=fmtShortDate(s)+' - '+fmtShortDate(e);
+  const rows=staffUsers.filter(u=>week.rows[u.id].gewerkt>0.001||week.rows[u.id].doorgegeven>0.001);
+  const lbl='font-size:11px; font-weight:700; color:var(--ink-soft);';
+  const grid='display:grid; grid-template-columns:1.1fr .85fr 1.05fr .85fr; gap:8px; align-items:center;';
+  let html='<div class="week-nav" style="padding:0 16px 4px;"><button id="payPrev" '+(idx<=0?'disabled':'')+'>‹</button><div class="wn-label">'+label+'</div><button id="payNext" '+(idx>=ledger.length-1?'disabled':'')+'>›</button></div>'
+    +'<p class="section-hint" style="margin:6px 16px 12px;">Enkel medewerkers die deze week gewerkt hebben staan hier. Vul bij <b>Betaalde uren</b> in wat je hebt doorgegeven (bv. 3,75 of 3u45). De balans wordt automatisch berekend en wat openstaat blijft meetellen voor de volgende weken.</p>';
+  html+='<div class="card" style="margin:0 16px 14px;">';
+  if(!rows.length) html+='<div class="empty-state" style="padding:18px;">Niemand heeft deze week gewerkt.</div>';
+  else {
+    html+='<div style="'+grid+' margin-bottom:6px;"><div style="'+lbl+'">Medewerker</div><div style="'+lbl+'">Gewerkte uren</div><div style="'+lbl+'">Betaalde uren</div><div style="'+lbl+'">Balans</div></div>';
+    rows.forEach(u=>{
+      const r=week.rows[u.id];
+      html+='<div style="'+grid+' padding:8px 0; border-top:1px solid var(--line);">'
+        +'<div style="font-size:14px; font-weight:700;">'+escapeHtml(u.name)+'</div>'
+        +'<div style="font-size:15px; font-weight:700;">'+fmtHours(r.gewerkt)+'</div>'
+        +'<input type="text" inputmode="decimal" class="pay-input" data-user="'+u.id+'" value="'+hoursToInput(r.doorgegeven)+'" placeholder="0" style="width:100%; padding:9px 8px; font-size:15px; font-weight:700; border-radius:10px; border:1.5px solid var(--line); font-family:inherit; background:#fff; color:var(--ink);">'
+        +'<div style="font-size:15px; font-weight:800; color:'+(r.verschil>0.001?'#b45309':(r.verschil<-0.001?'#b91c1c':'var(--green,#2e9e4f)'))+';">'+fmtHours(r.verschil)+'</div></div>';
+    });
+    html+='<button class="btn-secondary" id="payAllWeek" style="width:100%; margin-top:10px;">Alles van deze week uitbetaald</button>';
+  }
+  html+='</div>';
+  const open=staffUsers.filter(u=>(eindsaldo[u.id]||0)>0.001).sort((a,b)=>eindsaldo[b.id]-eindsaldo[a.id]);
+  html+='<div class="card" style="margin:0 16px 14px;"><div style="font-weight:800; margin-bottom:8px;">Totaal openstaand (alle weken)</div>'
+    +(open.length?open.map(u=>'<button type="button" class="open-person" data-user="'+u.id+'" style="display:flex; justify-content:space-between; align-items:center; width:100%; padding:10px 0; border:none; border-top:1px solid var(--line); background:none; font-family:inherit; font-size:15px; color:var(--ink); cursor:pointer; text-align:left;"><span>'+escapeHtml(u.name)+'</span><span><b style="color:#b45309;">'+fmtHours(eindsaldo[u.id])+'</b> <span style="color:var(--ink-soft);">›</span></span></button>').join(''):'<div class="wdr-empty">Niets openstaand.</div>')
+    +'</div>';
+  html+='<div class="card" style="margin:0 16px 16px; display:flex; gap:8px;"><button class="btn-secondary" id="viewOverviewBtn" style="margin-top:0; flex:1;">Volledig overzicht</button><button class="btn-primary" id="exportExcelBtn" style="margin-top:0; flex:1;">Openen in Excel</button></div><div id="excelStyleOverviewWrap" style="display:none;"></div>';
+  el.innerHTML=html;
+  el.querySelectorAll('.open-person').forEach(btn=>btn.onclick=()=>{
+    const u=staffUsers.find(x=>x.id===btn.dataset.user); if(!u) return;
+    const wks=ledger.filter(w=>w.rows[u.id].verschil>0.001);
+    const root=document.getElementById('modalRoot');
+    const ov=document.createElement('div'); ov.className='modal-overlay';
+    ov.innerHTML='<div class="modal-card"><div class="modal-head"><div class="modal-date">'+escapeHtml(u.name)+'</div><button class="modal-close">×</button></div>'
+      +'<div class="modal-sub">Openstaand: <b>'+fmtHours(eindsaldo[u.id])+'</b>. Tik op een week om daar de betaalde uren in te geven.</div>'
+      +wks.map(w=>{ const r=w.rows[u.id]; return '<button type="button" class="open-week" data-wk="'+w.weekKey+'" style="display:grid; grid-template-columns:1.3fr 1fr 1fr 16px; gap:8px; align-items:center; width:100%; padding:12px 4px; border:none; border-top:1px solid var(--line); background:none; font-family:inherit; font-size:14px; color:var(--ink); cursor:pointer; text-align:left;"><span style="font-weight:700;">'+w.label+'</span><span>'+fmtHours(r.gewerkt)+' gewerkt</span><b style="color:#b45309;">'+fmtHours(r.verschil)+' open</b><span style="color:var(--ink-soft);">›</span></button>'; }).join('')
+      +'</div>';
+    root.innerHTML=''; root.appendChild(ov);
+    const close=()=>{ root.innerHTML=''; };
+    ov.addEventListener('click',e=>{ if(e.target===ov) close(); });
+    ov.querySelector('.modal-close').onclick=close;
+    ov.querySelectorAll('.open-week').forEach(b=>b.onclick=()=>{ state.payWeekKey=b.dataset.wk; close(); drawUitbetalingInto(el); window.scrollTo(0,0); });
+  });
+  document.getElementById('payPrev').onclick=()=>{ state.payWeekKey=ledger[idx-1].weekKey; drawUitbetalingInto(el); };
+  document.getElementById('payNext').onclick=()=>{ state.payWeekKey=ledger[idx+1].weekKey; drawUitbetalingInto(el); };
+  el.querySelectorAll('.pay-input').forEach(inp=>{
+    inp.onchange=async ()=>{
+      const v=parseHoursInput(inp.value);
+      if(isNaN(v)||v<0){ showMessage('Geef een geldig aantal uren in, bv. 3,75 of 3u45.'); drawUitbetalingInto(el); return; }
+      const uid_=inp.dataset.user, wk=week.weekKey;
+      if(!state.paidHours[uid_]) state.paidHours[uid_]={};
+      state.paidHours[uid_][wk]=r4(v);
+      await persistPaid(uid_, {[wk]:r4(v)});
+      drawUitbetalingInto(el);
+    };
+  });
+  const allBtn=document.getElementById('payAllWeek');
+  if(allBtn) allBtn.onclick=async ()=>{
+    for(const u of rows){
+      const g=r4(week.rows[u.id].gewerkt);
+      if(!state.paidHours[u.id]) state.paidHours[u.id]={};
+      state.paidHours[u.id][week.weekKey]=g;
+      await persistPaid(u.id, {[week.weekKey]:g});
+    }
+    drawUitbetalingInto(el);
+  };
+  document.getElementById('exportExcelBtn').onclick=exportUrenExcel;
+  document.getElementById('viewOverviewBtn').onclick=()=>{
+    const wrap=document.getElementById('excelStyleOverviewWrap');
+    const showing=wrap.style.display!=='none';
+    if(showing){ wrap.style.display='none'; document.getElementById('viewOverviewBtn').textContent='Volledig overzicht'; }
+    else { drawExcelStyleOverview(wrap); wrap.style.display='block'; document.getElementById('viewOverviewBtn').textContent='Overzicht verbergen'; }
+  };
+}
+
+/* ---------- Scherm 2: weekkalender om uren in te voeren ---------- */
+function sessionDayKey(s){ return toDateKeyFromDate(new Date(s.inTs)); }
+function drawUrenInvoerInto(el){
+  const curMon=startOfWeekMonday(new Date());
+  if(!state.hoursWeekStart) state.hoursWeekStart=curMon;
+  if(state.hoursWeekStart>curMon) state.hoursWeekStart=curMon;
+  const start=state.hoursWeekStart;
+  const days=[]; for(let i=0;i<7;i++) days.push(addDays(start,i));
+  const todayKey=toDateKeyFromDate(new Date());
+  const staff=state.users.filter(u=>!u.isKiosk);
+  el.innerHTML=`
+    <div class="week-nav" style="padding:0 16px 4px;">
+      <button id="hwPrev">‹</button>
+      <div class="wn-label">${fmtShortDate(start)} - ${fmtShortDate(days[6])}</div>
+      <button id="hwNext" ${start>=curMon?'disabled':''}>›</button>
+    </div>
+    <p class="section-hint" style="margin:6px 16px 12px;">Tik op een dag bij een medewerker om uren toe te voegen, aan te passen of te verwijderen.</p>
+    <div class="week-scroll" id="hwScroll"></div>
+    <div class="legend" style="margin:14px 16px 20px;">
+      <span><span class="sw-dash"></span>Ingepland, nog geen uren</span>
+      <span><span class="sw" style="background:var(--green)"></span>Uren geregistreerd</span>
+    </div>`;
+  document.getElementById('hwPrev').onclick=()=>{ state.hoursWeekStart=addDays(start,-7); drawUrenInvoerInto(el); };
+  document.getElementById('hwNext').onclick=()=>{ state.hoursWeekStart=addDays(start,7); drawUrenInvoerInto(el); };
+  const sessByUser={};
+  staff.forEach(u=>{ sessByUser[u.id]=computeSessions(u.id); });
+  let html='<table class="grid-table"><thead><tr><th class="sticky-col">Medewerker</th>';
+  days.forEach(d=>{ html+='<th>'+capFirst(DAGEN[(d.getDay()+6)%7])+'<br>'+d.getDate()+'/'+(d.getMonth()+1)+'</th>'; });
+  html+='<th>Week</th></tr></thead><tbody>';
+  staff.forEach(u=>{
+    html+='<tr><td class="sticky-col"><div class="gm-name">'+escapeHtml(u.name)+'</div></td>';
+    let weekTotal=0;
+    days.forEach(d=>{
+      const key=toDateKeyFromDate(d);
+      const future=key>todayKey;
+      const ss=sessByUser[u.id].filter(s=>sessionDayKey(s)===key);
+      const hrs=ss.reduce((a,s)=>a+(s.outTs?s.hours:0),0); weekTotal+=hrs;
+      const open=ss.some(s=>!s.outTs && !s.stale);
+      const isStale=ss.some(s=>s.stale);
+      const planned=(state.schedule[key]||[]).some(a=>a.staffId===u.id);
+      let cell='';
+      if(isStale) cell='<div class="solid-chip" style="background:#b91c1c; color:#fff;">Uitklok mist</div>';
+      else if(ss.length) cell='<div class="solid-chip">'+(hrs>0?fmtHours(hrs):'')+(open?(hrs>0?' + ':'')+'bezig':'')+'</div>';
+      else if(planned) cell='<div class="dash-chip avail">Ingepland</div>';
+      html+='<td class="grid-cell"'+(future?' style="opacity:.4; cursor:default;"':'')+' data-uid="'+u.id+'" data-date="'+key+'" data-future="'+(future?1:0)+'">'+cell+'</td>';
+    });
+    html+='<td style="font-weight:800; text-align:center;">'+(weekTotal>0?fmtHours(weekTotal):'')+'</td></tr>';
+  });
+  html+='</tbody></table>';
+  const wrap=document.getElementById('hwScroll');
+  wrap.innerHTML=html;
+  wrap.querySelectorAll('.grid-cell').forEach(td=>{
+    td.onclick=()=>{
+      if(td.dataset.future==='1') return;
+      openDayHoursModal(td.dataset.uid, td.dataset.date, ()=>drawUrenInvoerInto(el));
+    };
+  });
+}
+
+function openDayHoursModal(userId, key, onChange){
+  const u=state.users.find(x=>x.id===userId); if(!u) return;
+  const root=document.getElementById('modalRoot');
+  const overlay=document.createElement('div'); overlay.className='modal-overlay';
+  const d=new Date(key+'T00:00:00');
+  const title=escapeHtml(u.name)+' · '+capFirst(DAGEN[(d.getDay()+6)%7])+' '+d.getDate()+'/'+(d.getMonth()+1);
+  const inp='padding:12px 10px; font-size:16px; border-radius:10px; border:1.5px solid var(--line); font-family:inherit; background:#fff; color:var(--ink); width:100%;';
+  const hm=ts=>{ const x=new Date(ts); return String(x.getHours()).padStart(2,'0')+':'+String(x.getMinutes()).padStart(2,'0'); };
+  root.innerHTML=''; root.appendChild(overlay);
+  const close=()=>{ root.innerHTML=''; if(onChange) onChange(); };
+  overlay.addEventListener('click',e=>{ if(e.target===overlay) close(); });
+  let sessions=[];
+  const overlaps=(i,o,self)=>sessions.some(x=>x!==self && i<(x.outTs||Date.now()) && o>x.inTs);
+  const render=()=>{
+    sessions=computeSessions(userId).filter(s=>sessionDayKey(s)===key).sort((a,b)=>a.inTs-b.inTs);
+    let h='<div class="modal-card"><div class="modal-head"><div class="modal-date">'+title+'</div><button class="modal-close">×</button></div>';
+    if(sessions.length){
+      h+='<div style="font-weight:700; margin:6px 0 8px;">Geregistreerde uren</div>';
+      sessions.forEach((s,i)=>{
+        h+='<div class="entry-row" style="flex-direction:column; align-items:stretch; margin:0 0 8px;" data-i="'+i+'">'
+          +'<div style="display:flex; gap:8px; align-items:center;"><input type="time" class="ds-in" value="'+hm(s.inTs)+'" style="'+inp+'"><span>–</span><input type="time" class="ds-out" value="'+(s.outTs?hm(s.outTs):'')+'" style="'+inp+'"></div>'
+          +'<div style="display:flex; gap:8px; margin-top:8px;"><button class="btn-ghost-sm ds-save" style="flex:1;">Opslaan</button><button class="btn-ghost-sm ds-del" style="flex:1; color:var(--red); border-color:var(--red);">Verwijderen</button></div>'
+          +'<div class="wdr-empty" style="margin-top:6px;">'+(s.outTs?fmtHours(s.hours):(s.stale?'<b style="color:#b91c1c;">Uitklok ontbreekt: vul de eindtijd in en tik op Opslaan.</b>':'bezig (nog niet uitgeklokt)'))+'</div></div>';
+      });
+    } else h+='<div class="empty-state" style="padding:14px;">Nog geen uren voor deze dag.</div>';
+    if(!sessions.length){
+      h+='<div style="font-weight:700; margin:14px 0 8px;">Uren toevoegen</div>'
+        +'<div style="display:flex; gap:8px; margin-bottom:8px;"><button type="button" class="btn-secondary ds-preset" data-s="13:00" data-e="16:00" style="margin:0; flex:1;">13:00 - 16:00</button><button type="button" class="btn-secondary ds-preset" data-s="09:00" data-e="12:00" style="margin:0; flex:1;">09:00 - 12:00</button></div>'
+        +'<div style="display:flex; gap:8px; align-items:center;"><input type="time" id="dsNewIn" style="'+inp+'"><span>–</span><input type="time" id="dsNewOut" style="'+inp+'"></div>'
+        +'<div class="err-msg" id="dsErr" style="display:none; margin-top:10px;"></div>'
+        +'<div class="form-btn-row"><button class="btn-cancel" id="dsClose">Sluiten</button><button class="cta-green" id="dsAdd">Toevoegen</button></div></div>';
+    } else {
+      h+='<div class="err-msg" id="dsErr" style="display:none; margin-top:10px;"></div><p class="section-hint" style="margin:10px 0 0;">Per dag is er één registratie. Pas de uren hierboven aan, of verwijder ze om opnieuw in te geven.</p>'
+        +'<div class="form-btn-row"><button class="btn-cancel" id="dsClose" style="flex:1; padding:12px;">Sluiten</button></div></div>';
+    }
+    overlay.innerHTML=h;
+    const q=s=>overlay.querySelector(s);
+    const err=msg=>{ const e=q('#dsErr'); e.textContent=msg; e.style.display='block'; };
+    q('.modal-close').onclick=close; q('#dsClose').onclick=close;
+    overlay.querySelectorAll('.ds-preset').forEach(b=>b.onclick=()=>{ q('#dsNewIn').value=b.dataset.s; q('#dsNewOut').value=b.dataset.e; });
+    overlay.querySelectorAll('[data-i]').forEach(row=>{
+      const s=sessions[+row.dataset.i];
+      row.querySelector('.ds-save').onclick=async ()=>{
+        const a=row.querySelector('.ds-in').value, b=row.querySelector('.ds-out').value;
+        if(!a||!b) return err('Vul van- en tot-tijd in.');
+        const i=new Date(key+'T'+a).getTime(), o=new Date(key+'T'+b).getTime();
+        if(!(o>i)) return err('De eindtijd moet na de starttijd liggen.');
+        if(overlaps(i,o,s)) return err('Deze uren overlappen met een andere registratie van die dag.');
+        await saveSessionEdit(userId, s, i, o); close();
+      };
+      row.querySelector('.ds-del').onclick=async ()=>{
+        if(!await askConfirm('Deze gewerkte sessie verwijderen?')) return;
+        await deleteSession(s); render();
+      };
+    });
+    if(q('#dsAdd')) q('#dsAdd').onclick=async ()=>{
+      const a=q('#dsNewIn').value, b=q('#dsNewOut').value;
+      if(!a||!b) return err('Vul van- en tot-tijd in.');
+      const i=new Date(key+'T'+a).getTime(), o=new Date(key+'T'+b).getTime();
+      if(!(o>i)) return err('De eindtijd moet na de starttijd liggen.');
+      if(overlaps(i,o,null)) return err('Deze uren overlappen met een andere registratie van die dag.');
+      const msg=await persistManualSession(userId,i,o);
+      if(msg) return err(msg);
+      close();
+    };
+  };
+  render();
+}
+async function persistPaid(uid_, changed){
+  const rowsUp=Object.entries(changed).map(([wk,h])=>({ user_id:uid_, week_start:wk, hours:h }));
+  if(rowsUp.length){ const { error }=await sb.from('paid_hours').upsert(rowsUp); if(error) showMessage('Opslaan mislukt: '+error.message); }
+}
+
+function renderWerkurenAdmin(){
+  const c=document.getElementById('mainContent');
+  c.innerHTML='<div id="admBody" class="tab-body-pad"></div>';
+  drawAdminWerkuren(document.getElementById('admBody'));
+}
+
+function renderWerkuren(){
+  const container=document.getElementById('mainContent');
+  const uid_=state.currentUser.id;
+  const cs=getClockStatus(uid_);
+  const sessions=computeSessions(uid_).slice(0,10);
+  container.innerHTML=`
+    <div class="tab-body-pad">
+      <div class="clock-status-card ${cs.status==='in'?'in':''}">
+        <div class="cs-label">${cs.status==='in' ? 'Je bent ingeklokt' : 'Je bent uitgeklokt'}</div>
+        <div class="cs-sub">${cs.status==='in' && cs.since ? 'sinds '+fmtDateTime(cs.since) : 'Scan de QR-code om te starten'}</div>
+        ${cs.stale ? '<div class="cs-sub" style="margin-top:6px; color:#b91c1c; font-weight:700;">Je vorige registratie ('+fmtDateTime(cs.since)+') had geen uitklok. Scan om opnieuw te starten; de administrator past dit aan.</div>' : ''}
+      </div>
+      <div class="sticky-cta-wrap">
+        <button class="cta-green" id="scanBtn">${cs.status==='in' ? 'Scan om uit te klokken' : 'Scan om in te klokken'}</button>
+      </div>
+      <h2 class="section-title" style="margin:20px 16px 10px;">Recente sessies</h2>
+      <div id="sessionsList"></div>
+    </div>
+  `;
+  const listEl=document.getElementById('sessionsList');
+  if(sessions.length===0){
+    listEl.innerHTML='<div class="empty-state">Nog geen gewerkte uren geregistreerd.</div>';
+  } else {
+    listEl.innerHTML='';
+    sessions.forEach(s=>{
+      const row=document.createElement('div');
+      row.className='entry-row';
+      row.innerHTML=`
+        <div class="e-date">${fmtDateTime(s.inTs)} ${s.outTs?'– '+fmtDateTime(s.outTs):'(bezig)'}</div>
+        <div class="e-right"><span class="status-badge avail">${fmtHours(s.hours)}</span></div>
+      `;
+      listEl.appendChild(row);
+    });
+  }
+  document.getElementById('scanBtn').onclick=openScanner;
+}
+
+/* ---- QR scanner (camera) ---- */
+async function openScanner(){
+  const root=document.getElementById('modalRoot');
+  const overlay=document.createElement('div');
+  overlay.className='modal-overlay';
+  overlay.innerHTML=`
+    <div class="modal-card scanner-card">
+      <div class="modal-head"><div class="modal-date">QR-code scannen</div><button class="modal-close">×</button></div>
+      <video id="scanVideo" playsinline autoplay muted></video>
+      <canvas id="scanCanvas" style="display:none;"></canvas>
+      <div id="scanMsg" class="section-hint" style="margin:10px 16px 0;">Richt de camera op de QR-code bij de ingang.</div>
+    </div>
+  `;
+  let stream=null;
+  let stopped=false;
+  function closeScanner(){
+    stopped=true;
+    if(stream){ stream.getTracks().forEach(t=>t.stop()); }
+    root.innerHTML='';
+  }
+  overlay.addEventListener('click',(e)=>{ if(e.target===overlay) closeScanner(); });
+  overlay.querySelector('.modal-close').onclick=closeScanner;
+  root.innerHTML='';
+  root.appendChild(overlay);
+
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:'environment' } });
+  }catch(err){
+    document.getElementById('scanMsg').textContent='Kan de camera niet openen ('+err.message+'). Geef camera-toegang in je browserinstellingen en probeer opnieuw.';
+    return;
+  }
+  const video=document.getElementById('scanVideo');
+  video.srcObject=stream;
+  const canvas=document.getElementById('scanCanvas');
+  const ctx=canvas.getContext('2d');
+
+  async function tick(){
+    if(stopped) return;
+    if(video.readyState===video.HAVE_ENOUGH_DATA){
+      canvas.width=video.videoWidth; canvas.height=video.videoHeight;
+      ctx.drawImage(video,0,0,canvas.width,canvas.height);
+      const imgData=ctx.getImageData(0,0,canvas.width,canvas.height);
+      const code=jsQR(imgData.data, imgData.width, imgData.height);
+      if(code){
+        const ok=await handleScanResult(code.data);
+        if(ok){ closeScanner(); return; }
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+async function handleScanResult(data){
+  const msgEl=document.getElementById('scanMsg');
+  // Validatie gebeurt nu volledig server-side (verify-clock edge function):
+  // het kiosk-geheim staat nergens op dit toestel, dus enkel een echte,
+  // actuele scan van het kiosk-scherm kan hier ooit voor slagen.
+  const result=await callEdgeFunction('verify-clock', { scanned: data||'' });
+  if(!result.success){
+    if(msgEl) msgEl.textContent=result.error||'Ongeldige QR-code.';
+    return false;
+  }
+  await loadAll();   // haal de echte registratie (met echte id) op, zodat bewerken/verwijderen later klopt
+  renderWerkuren();
+  return true;
+}
+
+/* ---- admin: tijdsregistraties overzicht + excel export ---- */
+const WEEKDAG_LANG=['zondag','maandag','dinsdag','woensdag','donderdag','vrijdag','zaterdag'];
+const CONTRACT_RULES={ 3:{start:'13:00',end:'16:00'}, 6:{start:'09:00',end:'12:00'}, 0:{start:'09:00',end:'12:00'} };
+
+
+// ============ AUTOMATISCH PLANNEN + PLANNINGSVOORKEUREN ============
+const PLAN_WEEKDAYS=['Maandag','Dinsdag','Woensdag','Donderdag','Vrijdag','Zaterdag','Zondag'];
+function defaultPlanPrefs(){ return { levels:{}, fixed:{}, planDays:[2,5,6], perDay:2, weightA:2, weightB:1 }; }
+function getPlanPrefs(){
+  const p=Object.assign(defaultPlanPrefs(), state.planPrefs||{});
+  p.levels=p.levels||{}; p.fixed=p.fixed||{};
+  return p;
+}
+function planStaff(){ return state.users.filter(u=>!u.isKiosk); }
+
+function drawPlanningPrefsInto(body){
+  if(!state.currentUser.isAdmin){ body.innerHTML='<div class="empty-state">Geen toegang.</div>'; return; }
+  const p=getPlanPrefs();
+  let html='<p class="section-hint" style="margin:0 16px 14px;">Deze voorkeuren worden enkel gebruikt wanneer je in Beschikbaarheid op <b>Automatisch plannen</b> klikt. Er wordt nooit iets vanzelf ingepland.</p>';
+  html+='<h2 class="section-title" style="margin:6px 16px 10px;">Niveau per medewerker</h2>';
+  html+='<p class="section-hint" style="margin:0 16px 10px;"><b>A</b> = beste medewerkers, krijgen de meeste uren. <b>B</b> = krijgen ook automatisch uren, maar minder. <b>C</b> = krijgen geen automatische uren (nieuwe medewerkers staan standaard op C).</p>';
+  html+='<div class="card" style="margin:0 16px 16px;">';
+  planStaff().forEach(u=>{
+    const lv=p.levels[u.id]||'C';
+    html+='<div style="padding:10px 0; border-bottom:1px solid var(--line);"><div style="font-weight:600; margin-bottom:6px;">'+escapeHtml(u.name)+'</div><div style="display:flex; gap:6px;">';
+    ['A','B','C'].forEach(l=>{
+      const on=lv===l;
+      html+='<button type="button" class="pp-level" data-uid="'+u.id+'" data-l="'+l+'" style="flex:1; padding:9px 0; border-radius:10px; font-weight:700; cursor:pointer; border:1.5px solid '+(on?'var(--blue,#1a4f9c)':'var(--line)')+'; background:'+(on?'var(--blue,#1a4f9c)':'#fff')+'; color:'+(on?'#fff':'var(--ink)')+';">'+l+'</button>';
+    });
+    html+='</div></div>';
+  });
+  if(!planStaff().length) html+='<div class="empty-state">Nog geen medewerkers.</div>';
+  html+='</div>';
+  html+='<h2 class="section-title" style="margin:6px 16px 10px;">Vaste dagen</h2>';
+  html+='<p class="section-hint" style="margin:0 16px 10px;">Kies dagen waarop iemand altijd moet werken (bv. Florian elke zaterdag). Deze worden altijd ingepland, ook als iemand geen beschikbaarheid doorgaf of niveau C heeft.</p>';
+  html+='<div class="card" style="margin:0 16px 16px;">';
+  planStaff().forEach(u=>{
+    const fx=p.fixed[u.id]||[];
+    html+='<div style="padding:10px 0; border-bottom:1px solid var(--line);"><div style="font-weight:600; margin-bottom:6px;">'+escapeHtml(u.name)+'</div><div style="display:flex; flex-wrap:wrap; gap:6px;">';
+    PLAN_WEEKDAYS.forEach((n,i)=>{
+      const on=fx.includes(i);
+      html+='<button type="button" class="pp-fixed" data-uid="'+u.id+'" data-d="'+i+'" style="padding:7px 10px; border-radius:16px; font-size:13px; cursor:pointer; border:1.5px solid '+(on?'var(--green,#2e9e4f)':'var(--line)')+'; background:'+(on?'var(--green,#2e9e4f)':'#fff')+'; color:'+(on?'#fff':'var(--ink)')+';">'+n.slice(0,2)+'</button>';
+    });
+    html+='</div></div>';
+  });
+  html+='</div>';
+  html+='<h2 class="section-title" style="margin:6px 16px 10px;">Algemeen</h2><div class="card" style="margin:0 16px 20px;">';
+  html+='<label class="field-label" style="margin-top:0;">Dagen waarop gepland wordt</label><div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px;">';
+  PLAN_WEEKDAYS.forEach((n,i)=>{
+    const on=p.planDays.includes(i);
+    html+='<button type="button" class="pp-planday" data-d="'+i+'" style="padding:7px 10px; border-radius:16px; font-size:13px; cursor:pointer; border:1.5px solid '+(on?'var(--green,#2e9e4f)':'var(--line)')+'; background:'+(on?'var(--green,#2e9e4f)':'#fff')+'; color:'+(on?'#fff':'var(--ink)')+';">'+n.slice(0,2)+'</button>';
+  });
+  html+='</div><label class="field-label">Aantal personen per dag</label><input type="number" id="ppPerDay" min="1" max="20" value="'+p.perDay+'">';
+  html+='<label class="field-label">Gewicht niveau A (t.o.v. B = 1)</label><input type="number" id="ppWeightA" min="1" max="10" step="0.5" value="'+p.weightA+'">';
+  html+='</div>';
+  body.innerHTML=html;
+  const upd=async fn=>{ const np=getPlanPrefs(); fn(np); state.planPrefs=np; await savePlanPrefs(); drawPlanningPrefsInto(body); };
+  body.querySelectorAll('.pp-level').forEach(b=>b.onclick=()=>upd(np=>{ np.levels[b.dataset.uid]=b.dataset.l; }));
+  body.querySelectorAll('.pp-fixed').forEach(b=>b.onclick=()=>upd(np=>{
+    const a=np.fixed[b.dataset.uid]||[]; const d=+b.dataset.d;
+    np.fixed[b.dataset.uid]=a.includes(d)?a.filter(x=>x!==d):a.concat([d]);
+  }));
+  body.querySelectorAll('.pp-planday').forEach(b=>b.onclick=()=>upd(np=>{
+    const d=+b.dataset.d; np.planDays=np.planDays.includes(d)?np.planDays.filter(x=>x!==d):np.planDays.concat([d]);
+  }));
+  document.getElementById('ppPerDay').onchange=e=>upd(np=>{ np.perDay=Math.max(1,Math.min(20,parseInt(e.target.value,10)||2)); });
+  document.getElementById('ppWeightA').onchange=e=>upd(np=>{ np.weightA=Math.max(1,parseFloat(e.target.value)||2); });
+}
+
+// Berekent een voorstel. Wijzigt NIETS in de opgeslagen planning; geeft enkel een lijst terug.
+function computeAutoPlan(year, month){
+  const p=getPlanPrefs();
+  const todayKey=toDateKeyFromDate(new Date());
+  const staff=planStaff();
+  const weightOf=u=>{ const l=p.levels[u.id]||'C'; return l==='A'?p.weightA:(l==='B'?p.weightB:0); };
+  const days=[];
+  const last=new Date(year, month+1, 0).getDate();
+  for(let d=1; d<=last; d++){
+    const dt=new Date(year, month, d);
+    const wd=(dt.getDay()+6)%7;
+    const key=toDateKeyFromDate(dt);
+    if(key<todayKey) continue;
+    if(!p.planDays.includes(wd)) continue;
+    days.push({key, wd});
+  }
+  // aantal reeds (bevestigd of klaargezet) ingeplande dagen in deze maand
+  const monthCount={}; staff.forEach(u=>monthCount[u.id]=0);
+  const isAssigned=(key,uid)=>{
+    const pk=key+'|'+uid;
+    if(state.pendingScheduleChanges.hasOwnProperty(pk)) return !!state.pendingScheduleChanges[pk];
+    return (state.schedule[key]||[]).some(a=>a.staffId===uid);
+  };
+  const monthPrefix=year+'-'+String(month+1).padStart(2,'0');
+  const allKeys=new Set(Object.keys(state.schedule));
+  Object.keys(state.pendingScheduleChanges).forEach(k=>allKeys.add(k.slice(0,k.lastIndexOf('|'))));
+  allKeys.forEach(key=>{ if(key.startsWith(monthPrefix)) staff.forEach(u=>{ if(isAssigned(key,u.id)) monthCount[u.id]++; }); });
+  const availCount={};
+  staff.forEach(u=>{ availCount[u.id]=Object.keys(state.availability[u.id]||{}).filter(k=>k.startsWith(monthPrefix)&&k>=todayKey&&state.availability[u.id][k]==='available').length; });
+
+  const added=[]; // {key, uid, fixed}
+  const slots={};
+  days.forEach(day=>{
+    slots[day.key]=staff.filter(u=>isAssigned(day.key,u.id)).length;
+  });
+  // 1) vaste dagen
+  days.forEach(day=>{
+    staff.forEach(u=>{
+      if((p.fixed[u.id]||[]).includes(day.wd) && !isAssigned(day.key,u.id)){
+        added.push({key:day.key, uid:u.id, fixed:true});
+        state.pendingScheduleChanges[day.key+'|'+u.id]=true; // tijdelijk, voor tellingen (wordt zo meteen gemarkeerd)
+        monthCount[u.id]++; slots[day.key]++;
+      }
+    });
+  });
+  // 2) eerlijk aanvullen: dagen met de minste kandidaten eerst
+  const candidatesFor=day=>staff.filter(u=>weightOf(u)>0 && (state.availability[u.id]||{})[day.key]==='available' && !isAssigned(day.key,u.id));
+  const order=days.slice().sort((a,b)=>candidatesFor(a).length-candidatesFor(b).length || (a.key<b.key?-1:1));
+  order.forEach(day=>{
+    while(slots[day.key]<p.perDay){
+      const c=candidatesFor(day);
+      if(!c.length) break;
+      c.sort((a,b)=>{
+        const ra=monthCount[a.id]/(weightOf(a)*Math.max(1,availCount[a.id]));
+        const rb=monthCount[b.id]/(weightOf(b)*Math.max(1,availCount[b.id]));
+        return ra-rb || a.name.localeCompare(b.name);
+      });
+      const pick=c[0];
+      added.push({key:day.key, uid:pick.id, fixed:false});
+      state.pendingScheduleChanges[day.key+'|'+pick.id]=true;
+      monthCount[pick.id]++; slots[day.key]++;
+    }
+  });
+  const unfilled=days.filter(d=>slots[d.key]<p.perDay).map(d=>d.key);
+  // tijdelijke markeringen weer weg; de aanroeper zet het resultaat definitief klaar
+  added.forEach(a=>{ delete state.pendingScheduleChanges[a.key+'|'+a.uid]; });
+  return {added, unfilled, monthCount, days};
+}
+
+function openAutoPlanDialog(){
+  const base=new Date(state.adminGridWeekStart); base.setDate(base.getDate()+3);
+  let y=base.getFullYear(), m=base.getMonth();
+  const MAANDEN=['Januari','Februari','Maart','April','Mei','Juni','Juli','Augustus','September','Oktober','November','December'];
+  const ov=document.createElement('div');
+  ov.style.cssText='position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:9999; display:flex; align-items:center; justify-content:center; padding:16px;';
+  ov.innerHTML='<div class="card" style="background:#fff; max-width:420px; width:100%; max-height:90vh; overflow:auto; padding:18px; border-radius:16px;"><h2 class="section-title" style="margin:0 0 8px;">Automatisch plannen</h2><p class="section-hint" style="margin:0 0 12px;">Maak een eerlijke verdeling voor de gekozen maand op basis van opgegeven beschikbaarheid en je planningsvoorkeuren. Je kan het resultaat daarna nog aanpassen vooraleer je bevestigt.</p><div class="week-nav" style="padding:0 0 10px;"><button id="apPrev">‹</button><div class="wn-label" id="apLabel"></div><button id="apNext">›</button></div><div id="apResult" style="font-size:14px; margin-bottom:12px;"></div><button class="cta-green" id="apRun" style="width:100%;">Verdeling maken</button><button class="btn-secondary" id="apClose" style="width:100%; margin-top:8px;">Annuleren</button></div>';
+  document.body.appendChild(ov);
+  const lab=()=>{ ov.querySelector('#apLabel').textContent=MAANDEN[m]+' '+y; ov.querySelector('#apResult').innerHTML=''; };
+  lab();
+  ov.querySelector('#apPrev').onclick=()=>{ m--; if(m<0){m=11;y--;} lab(); };
+  ov.querySelector('#apNext').onclick=()=>{ m++; if(m>11){m=0;y++;} lab(); };
+  ov.querySelector('#apClose').onclick=()=>ov.remove();
+  ov.querySelector('#apRun').onclick=()=>{
+    const res=computeAutoPlan(y,m);
+    res.added.forEach(a=>{ state.pendingScheduleChanges[a.key+'|'+a.uid]=true; });
+    const first=res.added.length?res.added.map(a=>a.key).sort()[0]:null;
+    if(first){
+      const d=new Date(first+'T00:00:00'); state.adminGridWeekStart=startOfWeekMonday(d);
+    }
+    drawAdminGridTable();
+    const per={}; res.added.forEach(a=>{ const u=state.users.find(x=>x.id===a.uid); per[u.name]=(per[u.name]||0)+1; });
+    let msg='<b>'+res.added.length+' inplanning'+(res.added.length===1?'':'en')+' klaargezet</b> (oranje). Ze zijn nog niet opgeslagen: bevestig onderaan met "Bevestig inplanning".';
+    if(res.added.length){ msg+='<ul style="margin:8px 0 0 18px; padding:0;">'+Object.entries(per).map(([n,c])=>'<li>'+escapeHtml(n)+': '+c+' dag'+(c===1?'':'en')+'</li>').join('')+'</ul>'; }
+    else msg='Er was niets bij te plannen voor deze maand (geen beschikbaarheid, of alles is al ingevuld).';
+    if(res.unfilled.length) msg+='<p style="color:#b45309; margin:8px 0 0;">Niet genoeg beschikbare personen op: '+res.unfilled.map(k=>k.slice(8)+'/'+k.slice(5,7)).join(', ')+'.</p>';
+    ov.querySelector('#apResult').innerHTML=msg;
+    ov.querySelector('#apRun').textContent='Opnieuw berekenen';
+    ov.querySelector('#apClose').textContent='Sluiten';
+  };
+}
+async function savePlanPrefs(){ const r=await sb.from('app_settings').upsert({ tenant_id:state.tenant.id, key:'planning_prefs', value: JSON.stringify(state.planPrefs) }); if(r.error) showMessage('Opslaan mislukt: '+r.error.message); }
+
+function drawContractenInto(body){
+  if(!state.currentUser.isAdmin){
+    body.innerHTML='<div class="empty-state">Geen toegang.</div>';
+    return;
+  }
+  body.innerHTML=`
+    <p class="section-hint" style="margin:0 16px 14px;">Contracten worden automatisch samengesteld voor werknemers die deze week zijn ingepland op woensdag (13:00-16:00) of in het weekend (09:00-12:00), telkens 3 uur.</p>
+    <div class="week-nav" style="padding:0 16px 4px;">
+      <button id="cPrevW">‹</button>
+      <div class="wn-label" id="cWeekLabel"></div>
+      <button id="cNextW">›</button>
+    </div>
+    <div id="contractList" style="margin-top:10px;"></div>
+    <h2 class="section-title" style="margin:20px 16px 10px;">Openstaand saldo</h2>
+    <p class="section-hint" style="margin:0 16px 14px;">Medewerkers met meer dan 3u nog te betalen. Vink aan als hiervoor ook een contract gemaakt moet worden.</p>
+    <div id="outstandingList" style="margin:0 0 6px;"></div>
+    <div class="card" style="margin:16px 16px;">
+      <label class="field-label" style="margin-top:0;">E-mailadres Liantis</label>
+      <input type="email" id="liantisEmailInput" placeholder="naam@liantis.be" value="${escapeHtml(state.liantisEmail||'')}">
+    </div>
+    <div class="err-msg" id="mailGenErr" style="display:none; margin:0 16px 10px;"></div>
+    <div class="sticky-cta-wrap">
+      <button class="cta-green" id="genMailBtn">E-mail genereren</button>
+      <div id="mailLinkWrap" style="margin-top:10px;"></div>
+    </div>
+    <h2 class="section-title" style="margin:20px 16px 10px;">Voorbeeld</h2>
+    <div class="card" style="margin:0 16px 16px;">
+      <textarea id="mailPreview" readonly style="width:100%; min-height:220px; border:1.5px solid var(--line); border-radius:10px; padding:12px; font-family:inherit; font-size:13px; color:var(--ink); resize:vertical;"></textarea>
+      <button class="btn-secondary" id="copyMailBtn">Kopieer tekst</button>
+    </div>
+  `;
+  document.getElementById('cPrevW').onclick=()=>{ state.contractWeekStart=addDays(state.contractWeekStart,-7); drawContractenInto(body); };
+  document.getElementById('cNextW').onclick=()=>{ state.contractWeekStart=addDays(state.contractWeekStart,7); drawContractenInto(body); };
+  document.getElementById('liantisEmailInput').onchange=async (e)=>{
+    const val=e.target.value.trim();
+    state.liantisEmail=val;
+    await sb.from('app_settings').upsert({ tenant_id:state.tenant.id, key:'liantis_email', value: val });
+  };
+  document.getElementById('genMailBtn').onclick=generateLiantisMail;
+  document.getElementById('copyMailBtn').onclick=()=>{
+    const ta=document.getElementById('mailPreview');
+    ta.select();
+    navigator.clipboard && navigator.clipboard.writeText(ta.value).catch(()=>{});
+  };
+  drawContractList();
+}
+
+function buildContractGroups(){
+  const start=state.contractWeekStart;
+  const days=[]; for(let i=0;i<7;i++) days.push(addDays(start,i));
+  const groups=[];
+  days.forEach(d=>{
+    const dow=d.getDay();
+    const rule=CONTRACT_RULES[dow];
+    if(!rule) return;
+    const key=toDateKeyFromDate(d);
+    const entries=(state.schedule[key]||[])
+      .map(a=>state.users.find(u=>u.id===a.staffId))
+      .filter(u=>u && !u.isKiosk);
+    if(entries.length===0) return;
+    groups.push({
+      date:d, dateKey:key, rule,
+      label: capFirst(WEEKDAG_LANG[dow])+' '+String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0'),
+      names: entries.map(u=>u.name.split(' ')[0])
+    });
+  });
+  return groups;
+}
+
+function drawContractList(){
+  const start=state.contractWeekStart;
+  document.getElementById('cWeekLabel').textContent = fmtShortDate(start)+' - '+fmtShortDate(addDays(start,6));
+  const groups=buildContractGroups();
+  const listEl=document.getElementById('contractList');
+  if(groups.length===0){
+    listEl.innerHTML='<div class="empty-state">Geen contracten nodig deze week — niemand ingepland op woensdag of in het weekend.</div>';
+  } else {
+    listEl.innerHTML='';
+    groups.forEach(g=>{
+      const card=document.createElement('div');
+      card.className='day-block';
+      card.style.margin='0 16px 10px';
+      let rows='';
+      g.names.forEach(n=>{ rows+='<div class="wdr-colleagues" style="border:none;margin:2px 0;padding:0;">'+g.rule.start+' - '+g.rule.end+' '+escapeHtml(n)+'</div>'; });
+      card.innerHTML='<div class="d-head"><div class="d-date">'+g.label+'</div></div>'+rows;
+      listEl.appendChild(card);
+    });
+  }
+  drawOutstandingList();
+  document.getElementById('mailPreview').value='';
+}
+
+function drawOutstandingList(){
+  const {staffUsers, eindsaldo}=computeWeeklyLedger();
+  const outEl=document.getElementById('outstandingList');
+  const withBalance=staffUsers.filter(u=>(eindsaldo[u.id]||0)>3.0001);
+  if(withBalance.length===0){
+    outEl.innerHTML='<div class="empty-state" style="margin:0 16px;">Niemand heeft meer dan 3u openstaand.</div>';
+    return;
+  }
+  outEl.innerHTML='';
+  withBalance.forEach(u=>{
+    const bal=eindsaldo[u.id];
+    const row=document.createElement('div');
+    row.className='staff-row';
+    row.style.margin='0 16px 8px';
+    row.style.background='var(--surface)';
+    row.style.border='1px solid var(--line)';
+    row.style.borderRadius='12px';
+    row.style.padding='12px 14px';
+    row.innerHTML=`
+      <div>
+        <div class="sr-name">${escapeHtml(u.name)}</div>
+        <div class="sr-status unavail">${fmtHours(bal)} nog te betalen</div>
+      </div>
+      <label class="switch"><input type="checkbox" class="outstanding-check" data-user="${u.id}" data-hours="${bal}"><span class="slider"></span></label>
+    `;
+    outEl.appendChild(row);
+  });
+}
+
+function generateLiantisMail(){
+  const start=state.contractWeekStart;
+  const days=[]; for(let i=0;i<7;i++) days.push(addDays(start,i));
+
+  const dayMap={};
+  days.forEach(d=>{
+    const dow=d.getDay();
+    const rule=CONTRACT_RULES[dow];
+    if(!rule) return;
+    const key=toDateKeyFromDate(d);
+    const names=(state.schedule[key]||[])
+      .map(a=>state.users.find(u=>u.id===a.staffId))
+      .filter(u=>u && !u.isKiosk)
+      .map(u=>u.name.split(' ')[0]);
+    dayMap[key]={
+      date:d, dow, rule,
+      label: capFirst(WEEKDAG_LANG[dow])+' '+String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0'),
+      names
+    };
+  });
+
+  const weekendKeys=days.filter(d=>d.getDay()===6||d.getDay()===0).map(toDateKeyFromDate);
+  const errors=[];
+  const selectedOutstanding=Array.from(document.querySelectorAll('.outstanding-check:checked')).map(chk=>{
+    return state.users.find(x=>x.id===chk.getAttribute('data-user'));
+  }).filter(Boolean);
+
+  selectedOutstanding.forEach(u=>{
+    const firstName=u.name.split(' ')[0];
+    let placed=false;
+    for(const wk of weekendKeys){
+      const already=(state.schedule[wk]||[]).some(a=>a.staffId===u.id);
+      if(!already && dayMap[wk]){
+        dayMap[wk].names.push(firstName);
+        placed=true;
+        break;
+      }
+    }
+    if(!placed){
+      errors.push('Het is niet mogelijk om de openstaande uren van '+u.name+' uit te betalen deze week \u2014 '+u.name.split(' ')[0]+' staat al ingepland op zowel zaterdag als zondag.');
+    }
+  });
+
+  let body='Beste,\n\nGelieve volgende contracten op te maken voor '+brandLegal()+'.\n\n';
+  days.forEach(d=>{
+    const key=toDateKeyFromDate(d);
+    const group=dayMap[key];
+    if(!group || group.names.length===0) return;
+    body+=group.label+'\n';
+    group.names.forEach(n=>{ body+=group.rule.start+' - '+group.rule.end+' '+n+'\n'; });
+    body+='\n';
+  });
+  body+='Met vriendelijke groeten,\n'+brandName();
+  document.getElementById('mailPreview').value=body;
+
+  const errEl=document.getElementById('mailGenErr');
+  if(errors.length>0){
+    errEl.innerHTML=errors.map(e=>escapeHtml(e)).join('<br>');
+    errEl.style.display='block';
+  } else {
+    errEl.style.display='none';
+  }
+
+  const subject='Contracten week '+fmtShortDate(start)+' - '+fmtShortDate(addDays(start,6))+' - '+brandName();
+  const to=(state.liantisEmail||'').trim();
+  const mailto='mailto:'+encodeURIComponent(to)+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
+  const wrap=document.getElementById('mailLinkWrap');
+  wrap.innerHTML='<a href="'+mailto+'" class="btn-secondary" style="display:block; text-align:center; text-decoration:none;">Open e-mail in mailprogramma</a>';
+}
+
+async function persistManualSession(userId,inTs,outTs){
+  const { error } = await sb.from('time_entries').insert([
+    { user_id:userId, type:'in', ts:new Date(inTs).toISOString(), manual:true },
+    { user_id:userId, type:'out', ts:new Date(outTs).toISOString(), manual:true },
+  ]);
+  if(error) return error.message;
+  await loadAll();
+  return null;
+}
+
+/* ===== Uren manueel indienen (groot formulier) ===== */
+function openManualHoursModal(){
+  const root=document.getElementById('modalRoot');
+  const staff=state.users.filter(u=>!u.isKiosk);
+  const today=toDateKeyFromDate(new Date());
+  const overlay=document.createElement('div');
+  overlay.className='modal-overlay';
+  const inp='width:100%; padding:14px 12px; font-size:17px; border-radius:12px; border:1.5px solid var(--line); font-family:inherit; background:#fff; color:var(--ink);';
+  overlay.innerHTML=`
+    <div class="modal-card">
+      <div class="modal-head"><div class="modal-date">Uren manueel indienen</div><button class="modal-close">×</button></div>
+      <div class="modal-sub">Voor wanneer iemand vergeten is de QR-code te scannen.</div>
+      <label class="field-label">Medewerker</label>
+      <select id="mhUser" style="${inp}">${staff.map(u=>'<option value="'+u.id+'">'+escapeHtml(u.name)+'</option>').join('')}</select>
+      <label class="field-label">Datum</label>
+      <input type="date" id="mhDate" value="${today}" max="${today}" style="${inp}">
+      <label class="field-label">Snel kiezen</label>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button type="button" class="btn-secondary mh-preset" data-s="13:00" data-e="16:00" style="margin:0; flex:1;">Woensdag 13:00 - 16:00</button>
+        <button type="button" class="btn-secondary mh-preset" data-s="09:00" data-e="12:00" style="margin:0; flex:1;">Weekend 09:00 - 12:00</button>
+      </div>
+      <div class="field-row">
+        <div><label class="field-label">Van</label><input type="time" id="mhStart" style="${inp}"></div>
+        <div><label class="field-label">Tot</label><input type="time" id="mhEnd" style="${inp}"></div>
+      </div>
+      <div id="mhTotal" style="margin-top:10px; font-weight:700; color:var(--navy);"></div>
+      <div class="err-msg" id="mhErr" style="display:none; margin-top:10px;"></div>
+      <div class="info-msg" id="mhOk" style="display:none; margin-top:10px;"></div>
+      <div class="form-btn-row">
+        <button class="btn-cancel" id="mhClose">Sluiten</button>
+        <button class="cta-green" id="mhSave" ${staff.length?'':'disabled'}>Uren indienen</button>
+      </div>
+    </div>`;
+  root.innerHTML=''; root.appendChild(overlay);
+  const q=s=>overlay.querySelector(s);
+  const close=()=>{ root.innerHTML=''; };
+  overlay.addEventListener('click',e=>{ if(e.target===overlay) close(); });
+  q('.modal-close').onclick=close; q('#mhClose').onclick=close;
+  const upd=()=>{
+    const s=q('#mhStart').value, e=q('#mhEnd').value;
+    if(s&&e){ const h=(new Date('2000-01-01T'+e)-new Date('2000-01-01T'+s))/3600000; q('#mhTotal').textContent=h>0?'Totaal: '+fmtHours(h):''; } else q('#mhTotal').textContent='';
+  };
+  q('#mhStart').oninput=upd; q('#mhEnd').oninput=upd;
+  overlay.querySelectorAll('.mh-preset').forEach(b=>b.onclick=()=>{ q('#mhStart').value=b.dataset.s; q('#mhEnd').value=b.dataset.e; upd(); });
+  q('#mhSave').onclick=async ()=>{
+    const err=q('#mhErr'), ok=q('#mhOk'); err.style.display='none'; ok.style.display='none';
+    const userId=q('#mhUser').value, d=q('#mhDate').value, s=q('#mhStart').value, e=q('#mhEnd').value;
+    if(!userId||!d||!s||!e){ err.textContent='Vul medewerker, datum, van- en tot-tijd in.'; err.style.display='block'; return; }
+    const inTs=new Date(d+'T'+s).getTime(), outTs=new Date(d+'T'+e).getTime();
+    if(!(outTs>inTs)){ err.textContent='De eindtijd moet na de starttijd liggen.'; err.style.display='block'; return; }
+    const msg=await persistManualSession(userId,inTs,outTs);
+    if(msg){ err.textContent=msg; err.style.display='block'; return; }
+    const u=staff.find(x=>x.id===userId);
+    ok.textContent='Uren toegevoegd voor '+(u?u.name:'medewerker')+' ('+fmtHours((outTs-inTs)/3600000)+'). Je kan meteen nog een registratie toevoegen.';
+    ok.style.display='block';
+    q('#mhStart').value=''; q('#mhEnd').value=''; upd();
+    if(document.getElementById('ledgerScroll')) drawLedgerTable();
+  };
+}
+
+function drawTijdsregistratiesInto(body){
+  if(!state.currentUser.isAdmin){
+    body.innerHTML='<div class="empty-state">Geen toegang.</div>';
+    return;
+  }
+  const staffUsersForManual=state.users.filter(u=>!u.isKiosk);
+  body.innerHTML=`
+    <div style="margin:0 16px 16px;"><button class="cta-green" id="openManualBtn" style="width:100%;">+ Uren manueel indienen</button></div>
+    <h2 class="section-title" style="margin:0 16px 10px;">Uren per week</h2>
+    <p class="section-hint" style="margin:0 16px 14px;">Gewerkte uren worden automatisch berekend. Vul per week zelf "Doorgegeven" in — dit zijn de uren die uitbetaald worden. "Nog te betalen" is het verschil en telt automatisch mee naar de volgende week.</p>
+    <div class="month-nav" id="ledgerMonthNav" style="margin:0 16px 10px;"></div>
+    <div class="week-scroll" id="ledgerScroll"></div>
+    <div class="card" id="ledgerSummary" style="margin:16px 16px;"></div>
+    <div class="card" style="margin:0 16px 16px; display:flex; gap:8px;">
+      <button class="btn-secondary" id="viewOverviewBtn" style="margin-top:0; flex:1;">Volledig overzicht</button>
+      <button class="btn-primary" id="exportExcelBtn" style="margin-top:0; flex:1;">Openen in Excel</button>
+    </div>
+    <div id="excelStyleOverviewWrap" style="display:none;"></div>
+    <h2 class="section-title" style="margin:0 16px 10px;">Gewerkte uren beheren</h2>
+    <p class="section-hint" style="margin:0 16px 14px;">Pas een sessie aan of verwijder ze bij een vergissing. Toont enkel de maand die hierboven geselecteerd is.</p>
+    <div id="sessionsManageList" style="margin:0 0 6px;"></div>
+  `;
+  document.getElementById('exportExcelBtn').onclick=exportUrenExcel;
+  document.getElementById('viewOverviewBtn').onclick=()=>{
+    const wrap=document.getElementById('excelStyleOverviewWrap');
+    const showing=wrap.style.display!=='none';
+    if(showing){ wrap.style.display='none'; document.getElementById('viewOverviewBtn').textContent='Volledig overzicht'; }
+    else { drawExcelStyleOverview(wrap); wrap.style.display='block'; document.getElementById('viewOverviewBtn').textContent='Overzicht verbergen'; }
+  };
+  document.getElementById('openManualBtn').onclick=openManualHoursModal;
+  drawLedgerTable();
+}
+
+async function saveSessionEdit(userId, session, newInTs, newOutTs){
+  if(session.inId){
+    await sb.from('time_entries').update({ ts:new Date(newInTs).toISOString() }).eq('id', session.inId);
+  }
+  if(session.outId){
+    await sb.from('time_entries').update({ ts:new Date(newOutTs).toISOString() }).eq('id', session.outId);
+  } else {
+    await sb.from('time_entries').insert({ user_id:userId, type:'out', ts:new Date(newOutTs).toISOString(), manual:true });
+  }
+  await loadAll();
+}
+
+async function deleteSession(session){
+  if(session.inId) await sb.from('time_entries').delete().eq('id', session.inId);
+  if(session.outId) await sb.from('time_entries').delete().eq('id', session.outId);
+  await loadAll();
+}
+
+function drawSessionsManageList(){
+  const el=document.getElementById('sessionsManageList');
+  if(!el) return;
+  const monthKey=state.ledgerMonthKey;
+  const staffUsers=state.users.filter(u=>!u.isKiosk);
+  const rows=[];
+  staffUsers.forEach(u=>{
+    computeSessions(u.id).forEach(s=>{
+      const d=new Date(s.inTs);
+      const mk=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+      if(monthKey && mk!==monthKey) return;
+      rows.push({user:u, session:s});
+    });
+  });
+  rows.sort((a,b)=>b.session.inTs-a.session.inTs);
+  if(rows.length===0){
+    el.innerHTML='<div class="empty-state">Geen gewerkte sessies deze maand.</div>';
+    return;
+  }
+  el.innerHTML='';
+  rows.forEach(({user,session})=>{
+    const row=document.createElement('div');
+    row.className='entry-row';
+    row.style.flexDirection='column';
+    row.style.alignItems='stretch';
+    row.innerHTML=`
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div class="e-date">${escapeHtml(user.name)}</div>
+          <div class="wdr-empty">${fmtDateTime(session.inTs)} ${session.outTs?'\u2013 '+fmtDateTime(session.outTs):'(bezig)'} \u00b7 ${fmtHours(session.hours)}</div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn-ghost-sm" data-edit-session="1">Bewerk</button>
+          <button class="btn-ghost-sm" data-del-session="1" style="color:var(--red);border-color:var(--red);">Verwijder</button>
+        </div>
+      </div>
+      <div class="session-edit-form" style="display:none;"></div>
+    `;
+    const editBtn=row.querySelector('[data-edit-session]');
+    const delBtn=row.querySelector('[data-del-session]');
+    const formEl=row.querySelector('.session-edit-form');
+    editBtn.onclick=()=>{
+      if(formEl.style.display==='block'){ formEl.style.display='none'; formEl.innerHTML=''; return; }
+      const inD=new Date(session.inTs);
+      const outD=session.outTs?new Date(session.outTs):null;
+      const dateVal=inD.getFullYear()+'-'+String(inD.getMonth()+1).padStart(2,'0')+'-'+String(inD.getDate()).padStart(2,'0');
+      const startVal=String(inD.getHours()).padStart(2,'0')+':'+String(inD.getMinutes()).padStart(2,'0');
+      const endVal=outD ? String(outD.getHours()).padStart(2,'0')+':'+String(outD.getMinutes()).padStart(2,'0') : '';
+      formEl.innerHTML=`
+        <div class="field-row" style="margin-top:10px;">
+          <div><label class="field-label" style="margin-top:0;">Datum</label><input type="date" class="se-date" value="${dateVal}"></div>
+        </div>
+        <div class="field-row">
+          <div><label class="field-label">Van</label><input type="time" class="se-start" value="${startVal}"></div>
+          <div><label class="field-label">Tot</label><input type="time" class="se-end" value="${endVal}"></div>
+        </div>
+        <div class="err-msg se-err" style="display:none;"></div>
+        <div class="form-btn-row">
+          <button class="btn-cancel se-cancel">Annuleer</button>
+          <button class="cta-green se-save">Opslaan</button>
+        </div>
+      `;
+      formEl.style.display='block';
+      formEl.querySelector('.se-cancel').onclick=()=>{ formEl.style.display='none'; formEl.innerHTML=''; };
+      formEl.querySelector('.se-save').onclick=async ()=>{
+        const errE=formEl.querySelector('.se-err');
+        errE.style.display='none';
+        const dv=formEl.querySelector('.se-date').value;
+        const sv=formEl.querySelector('.se-start').value;
+        const ev=formEl.querySelector('.se-end').value;
+        if(!dv||!sv||!ev){ errE.textContent='Vul datum, van- en tot-tijd in.'; errE.style.display='block'; return; }
+        const newInTs=new Date(dv+'T'+sv).getTime();
+        const newOutTs=new Date(dv+'T'+ev).getTime();
+        if(!(newOutTs>newInTs)){ errE.textContent='Eindtijd moet na starttijd liggen.'; errE.style.display='block'; return; }
+        await saveSessionEdit(user.id, session, newInTs, newOutTs);
+        drawLedgerTable();
+      };
+    };
+    delBtn.onclick=async ()=>{
+      if(!await askConfirm('Deze gewerkte sessie verwijderen?')) return;
+      await deleteSession(session);
+      drawLedgerTable();
+    };
+    el.appendChild(row);
+  });
+}
+
+function computeWeeklyLedger(){
+  const staffUsers=state.users.filter(u=>!u.isKiosk);
+  const weekRawTotals={};
+  staffUsers.forEach(u=>{
+    computeSessions(u.id).forEach(s=>{
+      if(!s.outTs) return;
+      const wkStart=startOfWeekMonday(new Date(s.inTs));
+      const wk=toDateKeyFromDate(wkStart);
+      if(!weekRawTotals[wk]) weekRawTotals[wk]={};
+      weekRawTotals[wk][u.id]=(weekRawTotals[wk][u.id]||0)+s.hours;
+    });
+  });
+  // Alle weken aaneensluitend tonen (ook weken zonder sessies) zodat de admin overal uren kan ingeven
+  const keySet=new Set(Object.keys(weekRawTotals));
+  Object.values(state.paidHours||{}).forEach(o=>Object.keys(o||{}).forEach(k=>keySet.add(k)));
+  keySet.add(toDateKeyFromDate(startOfWeekMonday(new Date())));
+  const sortedKeys=[...keySet].sort();
+  const weekKeys=[];
+  { let cur=new Date(sortedKeys[0]+'T00:00:00'); const endD=new Date(sortedKeys[sortedKeys.length-1]+'T00:00:00');
+    while(cur<=endD){ weekKeys.push(toDateKeyFromDate(cur)); cur=addDays(cur,7); } }
+  const eindsaldo={};
+  staffUsers.forEach(u=>{ eindsaldo[u.id]=0; });
+  const ledger=[];
+  weekKeys.forEach(wk=>{
+    const rowData={};
+    staffUsers.forEach(u=>{
+      const gewerkt=(weekRawTotals[wk]||{})[u.id]||0;
+      const doorgegeven=(state.paidHours[u.id] && state.paidHours[u.id][wk]) || 0;
+      const verschil=gewerkt-doorgegeven;
+      rowData[u.id]={gewerkt, doorgegeven, verschil};
+      eindsaldo[u.id]+=verschil;
+    });
+    const [y,m,d]=wk.split('-').map(Number);
+    const start=new Date(y,m-1,d);
+    const end=addDays(start,6);
+    ledger.push({weekKey:wk, label: fmtShortDate(start)+' - '+fmtShortDate(end), rows:rowData});
+  });
+  return {staffUsers, ledger, eindsaldo};
+}
+
+function drawLedgerTable(){
+  const {staffUsers, ledger, eindsaldo}=computeWeeklyLedger();
+  const wrap=document.getElementById('ledgerScroll');
+  const navEl=document.getElementById('ledgerMonthNav');
+  drawLedgerSummary(staffUsers, eindsaldo);
+  if(ledger.length===0 || staffUsers.length===0){
+    navEl.innerHTML='';
+    wrap.innerHTML='<div class="empty-state">Nog geen volledige gewerkte weken.</div>';
+    drawSessionsManageList();
+    return;
+  }
+  const monthKeys=[...new Set(ledger.map(w=>w.weekKey.slice(0,7)))].sort();
+  if(!state.ledgerMonthKey || !monthKeys.includes(state.ledgerMonthKey)){
+    state.ledgerMonthKey=monthKeys[monthKeys.length-1];
+  }
+  const idx=monthKeys.indexOf(state.ledgerMonthKey);
+  const [my,mm]=state.ledgerMonthKey.split('-').map(Number);
+  navEl.innerHTML=`
+    <button id="ledgerPrevMonth" ${idx<=0?'disabled':''}>‹</button>
+    <div class="label">${MAANDEN[mm-1]} ${my}</div>
+    <button id="ledgerNextMonth" ${idx>=monthKeys.length-1?'disabled':''}>›</button>
+  `;
+  document.getElementById('ledgerPrevMonth').onclick=()=>{ state.ledgerMonthKey=monthKeys[idx-1]; drawLedgerTable(); };
+  document.getElementById('ledgerNextMonth').onclick=()=>{ state.ledgerMonthKey=monthKeys[idx+1]; drawLedgerTable(); };
+
+  const weeksThisMonth=ledger.filter(w=>w.weekKey.slice(0,7)===state.ledgerMonthKey).slice().reverse();
+  let html='<table class="grid-table"><thead><tr><th class="sticky-col" rowspan="2">Medewerker</th>';
+  weeksThisMonth.forEach(week=>{ html+='<th colspan="3">'+week.label+'</th>'; });
+  html+='</tr><tr>';
+  weeksThisMonth.forEach(()=>{ html+='<th>Gewerkt</th><th>Doorgeg.</th><th>Verschil</th>'; });
+  html+='</tr></thead><tbody>';
+  staffUsers.forEach(u=>{
+    html+='<tr><td class="sticky-col"><div class="gm-name">'+escapeHtml(u.name)+'</div></td>';
+    weeksThisMonth.forEach(week=>{
+      const r=week.rows[u.id];
+      html+='<td>'+fmtHours(r.gewerkt)+'</td>'
+        +'<td><input type="number" step="0.25" min="0" class="ledger-input" data-week="'+week.weekKey+'" data-user="'+u.id+'" value="'+(r.doorgegeven||'')+'" placeholder="0"></td>'
+        +'<td class="'+(r.verschil>0.001?'ledger-owe':'')+'">'+fmtHours(r.verschil)+'</td>';
+    });
+    html+='</tr>';
+  });
+  html+='</tbody></table>';
+  wrap.innerHTML=html;
+  wrap.querySelectorAll('.ledger-input').forEach(inp=>{
+    inp.onchange=async ()=>{
+      const wk=inp.getAttribute('data-week');
+      const uid_=inp.getAttribute('data-user');
+      const val=parseFloat(inp.value)||0;
+      if(!state.paidHours[uid_]) state.paidHours[uid_]={};
+      state.paidHours[uid_][wk]=val;
+      await sb.from('paid_hours').upsert({ user_id:uid_, week_start:wk, hours:val });
+      drawLedgerTable();
+    };
+  });
+  drawSessionsManageList();
+}
+
+function drawLedgerSummary(staffUsers, eindsaldo){
+  const el=document.getElementById('ledgerSummary');
+  if(staffUsers.length===0){ el.innerHTML=''; return; }
+  let html='<div class="il-label" style="padding:2px 2px 12px;">Eindsaldo nog te betalen</div>';
+  staffUsers.forEach(u=>{
+    const bal=eindsaldo[u.id]||0;
+    html+='<div class="entry-row" style="margin:0 0 8px;"><div class="e-date">'+escapeHtml(u.name)+'</div><div class="e-right"><span class="status-badge '+(bal>0.001?'unavail':'avail')+'" style="font-size:14px;">'+fmtHours(bal)+'</span></div></div>';
+  });
+  el.innerHTML=html;
+}
+
+function groupLedgerByMonth(ledger){
+  const monthGroups=[];
+  let curKey=null, curGroup=null;
+  ledger.forEach(week=>{
+    const mk=week.weekKey.slice(0,7);
+    if(mk!==curKey){
+      curKey=mk;
+      const [y,m]=mk.split('-').map(Number);
+      curGroup={ monthLabel: capFirst(MAANDEN[m-1])+' '+y, weeks:[] };
+      monthGroups.push(curGroup);
+    }
+    curGroup.weeks.push(week);
+  });
+  return monthGroups;
+}
+
+function drawExcelStyleOverview(container){
+  const {staffUsers, ledger, eindsaldo}=computeWeeklyLedger();
+  if(ledger.length===0 || staffUsers.length===0){
+    container.innerHTML='<div class="empty-state">Nog geen volledige gewerkte weken.</div>';
+    return;
+  }
+  const monthGroups=groupLedgerByMonth(ledger);
+  let html='<div class="week-scroll" style="margin:0 16px 16px;"><table class="grid-table"><thead><tr><th class="sticky-col" rowspan="3">Medewerker</th>';
+  monthGroups.forEach(g=>{ html+='<th colspan="'+(g.weeks.length*2)+'">'+g.monthLabel+'</th>'; });
+  html+='<th rowspan="3">Eindsaldo</th></tr><tr>';
+  monthGroups.forEach(g=>{ g.weeks.forEach(week=>{ html+='<th colspan="2">'+escapeHtml(week.label.split(' - ')[0])+'</th>'; }); });
+  html+='</tr><tr>';
+  ledger.forEach(()=>{ html+='<th>Nog te betalen</th><th>Tot. ingeschreven</th>'; });
+  html+='</tr></thead><tbody>';
+  staffUsers.forEach(u=>{
+    html+='<tr><td class="sticky-col"><div class="gm-name">'+escapeHtml(u.name)+'</div></td>';
+    ledger.forEach(week=>{
+      const r=week.rows[u.id];
+      html+='<td class="'+(r.verschil>0.001?'ledger-owe':'')+'">'+fmtHours(r.verschil)+'</td><td>'+fmtHours(r.gewerkt)+'</td>';
+    });
+    const bal=eindsaldo[u.id]||0;
+    html+='<td class="'+(bal>0.001?'ledger-owe':'')+'" style="font-weight:800;">'+fmtHours(bal)+'</td>';
+    html+='</tr>';
+  });
+  html+='</tbody></table></div>';
+  container.innerHTML=html;
+}
+
+function exportUrenExcel(){
+  if(!state.currentUser.isAdmin) return;
+  const {staffUsers, ledger, eindsaldo}=computeWeeklyLedger();
+  if(ledger.length===0 || staffUsers.length===0){
+    const ws=XLSX.utils.aoa_to_sheet([['Nog geen volledige gewerkte weken.']]);
+    const wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Werkuren');
+    XLSX.writeFile(wb, 'werkuren-'+brandSlugFile()+'.xlsx');
+    return;
+  }
+
+  const monthGroups=groupLedgerByMonth(ledger);
+
+  const totalWeekCols=ledger.length*2;
+  const lastCol=1+totalWeekCols; // kolom 0 = Medewerker, laatste kolom = Eindsaldo
+
+  const row0=new Array(lastCol+1).fill('');
+  const row1=new Array(lastCol+1).fill('');
+  const row2=new Array(lastCol+1).fill('');
+  row0[0]='Medewerker';
+  row0[lastCol]='Eindsaldo nog te betalen';
+
+  const merges=[
+    { s:{r:0,c:0}, e:{r:2,c:0} },
+    { s:{r:0,c:lastCol}, e:{r:2,c:lastCol} },
+  ];
+
+  let col=1;
+  monthGroups.forEach(g=>{
+    const monthStart=col;
+    g.weeks.forEach(week=>{
+      row1[col]=week.label.split(' - ')[0];
+      row2[col]='Nog te betalen uren';
+      row2[col+1]='Tot. ingeschreven uren';
+      merges.push({ s:{r:1,c:col}, e:{r:1,c:col+1} });
+      col+=2;
+    });
+    row0[monthStart]=g.monthLabel;
+    if(col-1>monthStart) merges.push({ s:{r:0,c:monthStart}, e:{r:0,c:col-1} });
+  });
+
+  const rows=[row0, row1, row2];
+  staffUsers.forEach(u=>{
+    const row=new Array(lastCol+1).fill('');
+    row[0]=u.name;
+    let c=1;
+    ledger.forEach(week=>{
+      const r=week.rows[u.id];
+      row[c]=Math.round(r.verschil*100)/100;
+      row[c+1]=Math.round(r.gewerkt*100)/100;
+      c+=2;
+    });
+    row[lastCol]=Math.round((eindsaldo[u.id]||0)*100)/100;
+    rows.push(row);
+  });
+
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!merges']=merges;
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Werkuren');
+  XLSX.writeFile(wb, 'werkuren-'+brandSlugFile()+'.xlsx');
+}
+
+/* ================= APP SHELL ================= */
+function renderApp(){
+  const app=document.getElementById('app');
+  app.innerHTML=`
+    <header class="topbar2">
+      <div class="row">
+        <img src="${brandLogo()}" alt="${escapeHtml(brandName())}" class="header-logo">
+        <h1 id="pageTitle">Home</h1>
+        <button class="bell-btn" id="bellBtn">${bellSvg}</button>
+      </div>
+    </header>
+    ${state.impersonatingFrom ? '<div class="impersonate-bar">Testweergave: <b>'+escapeHtml(state.currentUser.name)+'</b><button id="restoreAdminBtn">Terug naar admin</button></div>' : ''}
+    <main id="mainContent"></main>
+    <nav class="tabbar">
+      <button data-tab="home" id="tab-home">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"></path><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"></path></svg></span>
+        Home
+      </button>
+      <button data-tab="werktijden" id="tab-werktijden">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 3"></path></svg></span>
+        Werktijden
+      </button>
+      <button data-tab="beschikbaarheid" id="tab-beschikbaarheid">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 9h18M8 3v4M16 3v4"></path></svg></span>
+        Beschikbaarheid
+      </button>
+      <button data-tab="werkuren" id="tab-werkuren">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a2 2 0 0 1 2-2h1.2l1-1.6A1 1 0 0 1 9 4h6a1 1 0 0 1 .8.4L16.8 6H18a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"></path><circle cx="12" cy="13" r="3.3"></circle></svg></span>
+        Werkuren
+      </button>
+      <button data-tab="meer" id="tab-meer">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none"></circle><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"></circle><circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none"></circle></svg></span>
+        Meer
+      </button>
+    </nav>
+    <div id="modalRoot"></div>
+  `;
+  document.getElementById('bellBtn').onclick=()=>{ state.meerSubView=null; setTab('home'); };
+  if(state.impersonatingFrom){ const rb=document.getElementById('restoreAdminBtn'); if(rb) rb.onclick=restoreFromImpersonation; }
+  document.querySelectorAll('nav.tabbar button').forEach(b=>{
+    b.onclick=()=>{ if(b.dataset.tab!=='meer' || state.activeTab==='meer') state.meerSubView=null; setTab(b.dataset.tab); };
+  });
+  setTab(state.activeTab);
+}
+
+const TAB_TITLES={home:'Home', werktijden:'Werktijden', beschikbaarheid:'Beschikbaarheid', werkuren:'Werkuren', meer:'Meer'};
+
+/* ===== Data verversen (nieuwe gegevens van anderen zien zonder opnieuw in te loggen) ===== */
+let _lastRefresh=Date.now(), _refreshing=false;
+function dataSig(){ try{ return JSON.stringify([state.users.length,state.availability,state.schedule,state.messages,state.timeEntries,state.paidHours]); }catch(e){ return ''; } }
+async function refreshData(force){
+  if(_refreshing || !state.currentUser || state.currentUser.isKiosk) return;
+  if(!force && Date.now()-_lastRefresh<15000) return;
+  _refreshing=true;
+  try{
+    const keep=state.currentUser, imp=state.impersonatingFrom, before=dataSig();
+    // Klant geblokkeerd of uitzicht (naam/logo/kleuren) gewijzigd door Shift? Meteen toepassen.
+    let brandChanged=false;
+    try{
+      const { data: b } = await sb.rpc('get_my_branding');
+      if(b){
+        if(!b.active){ applyBranding(b); _lastRefresh=Date.now(); renderBlocked(); return; }
+        if(JSON.stringify(b)!==JSON.stringify(Object.assign({},b,state.tenant?Object.fromEntries(Object.keys(b).map(k=>[k,state.tenant[k]])):{}))){ applyBranding(b); brandChanged=true; }
+      }
+    }catch(e){}
+    const seq0=window._writeSeq||0;
+    await loadAll();
+    if((window._writeSeq||0)!==seq0){ await new Promise(r=>setTimeout(r,300)); await loadAll(); }
+    state.impersonatingFrom=imp;
+    state.currentUser=state.users.find(u=>u.id===keep.id)||keep;
+    _lastRefresh=Date.now();
+    const busy=document.querySelector('#modalRoot .modal-overlay') || (document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName));
+    const inApp=state.activeTab && state.currentUser && state.currentUser.id===keep.id && document.getElementById('tab-'+state.activeTab);
+    if(brandChanged && !busy && inApp) renderApp();
+    else if(dataSig()!==before && !busy && inApp) setTab(state.activeTab);
+  }catch(e){ console.warn('refresh mislukt',e); }
+  finally{ _refreshing=false; }
+}
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden) refreshData(); });
+
+function setTab(tab){
+  state.activeTab=tab;
+  document.getElementById('pageTitle').textContent=TAB_TITLES[tab];
+  document.querySelectorAll('nav.tabbar button').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  if(tab==='home') renderHome();
+  if(tab==='werktijden') renderWerktijden();
+  if(tab==='beschikbaarheid') renderBeschikbaarheid();
+  if(tab==='werkuren') { if(state.currentUser.isAdmin) renderWerkurenAdmin(); else renderWerkuren(); }
+  if(tab==='meer') renderMeer();
+  refreshData();
+}
+
+/* ================= REUSABLE: DATE STRIP + SHIFT PANEL ================= */
+function renderDateStrip(el, days, selectedKey, onSelect){
+  el.innerHTML='';
+  days.forEach(d=>{
+    const k=toDateKeyFromDate(d);
+    const hasShift=(state.schedule[k]||[]).some(a=>a.staffId===state.currentUser.id);
+    const btn=document.createElement('button');
+    btn.className='date-pill'+(k===selectedKey?' selected':'')+(hasShift?' has-shift':'');
+    btn.innerHTML='<span class="dnum">'+d.getDate()+'/'+(d.getMonth()+1)+'</span><span class="dday">'+capFirst(DAGEN[(d.getDay()+6)%7])+'</span>';
+    btn.onclick=()=>onSelect(k);
+    el.appendChild(btn);
+  });
+}
+
+function colleaguesOn(dateKey_){
+  const uid_=state.currentUser.id;
+  return (state.schedule[dateKey_]||[])
+    .filter(a=>a.staffId!==uid_)
+    .map(a=>{ const u=state.users.find(x=>x.id===a.staffId); return u ? u.name : null; })
+    .filter(Boolean);
+}
+
+function renderShiftPanel(el, dateKey_, emptyText){
+  const entries=(state.schedule[dateKey_]||[]).filter(a=>a.staffId===state.currentUser.id);
+  if(entries.length===0){
+    el.innerHTML='<div class="shift-panel">'+calendarXIcon+'<span>'+emptyText+'</span></div>';
+  } else {
+    const colleagues=colleaguesOn(dateKey_);
+    const colleagueLine = colleagues.length>0
+      ? 'Samen met: '+colleagues.map(escapeHtml).join(', ')
+      : 'Je werkt deze dag alleen.';
+    el.innerHTML='<div class="shift-list"><div class="shift-chip"><span>Ingepland</span><span>'+formatDateLong(dateKey_)+'</span></div><div class="colleague-note">'+colleagueLine+'</div></div>';
+  }
+}
+
+/* ================= HOME ================= */
+function renderHome(){
+  const container=document.getElementById('mainContent');
+  const today=new Date();
+  const days=[]; for(let i=0;i<7;i++) days.push(addDays(today,i));
+  if(!state.homeSelectedDate) state.homeSelectedDate=toDateKeyFromDate(today);
+  container.innerHTML=`
+    <div class="date-strip" id="homeStrip"></div>
+    <div id="homeShiftArea"></div>
+    <div class="news-section" id="homeNews"></div>
+  `;
+  const stripEl=document.getElementById('homeStrip');
+  function redrawHomeStrip(){
+    renderDateStrip(stripEl, days, state.homeSelectedDate, (k)=>{
+      state.homeSelectedDate=k;
+      redrawHomeStrip();
+      renderShiftPanel(document.getElementById('homeShiftArea'), k, 'Geen geplande werktijden');
+    });
+  }
+  redrawHomeStrip();
+  renderShiftPanel(document.getElementById('homeShiftArea'), state.homeSelectedDate, 'Geen geplande werktijden');
+
+  const newsEl=document.getElementById('homeNews');
+  newsEl.innerHTML='<div class="news-heading">Berichtenbord</div><div id="homeBoard"></div>';
+  drawBerichtenInto(document.getElementById('homeBoard'));
+}
+
+/* ================= WERKTIJDEN ================= */
+function renderWerktijden(){
+  const container=document.getElementById('mainContent');
+  container.innerHTML=`
+    <div class="subtabs">
+      <button data-mode="week" id="wtWeekBtn">Week</button>
+      <button data-mode="maand" id="wtMaandBtn">Maand</button>
+    </div>
+    <div class="tab-body-pad" id="wtBody"></div>
+  `;
+  document.getElementById('wtWeekBtn').onclick=()=>{ state.werktijdenMode='week'; renderWerktijden(); };
+  document.getElementById('wtMaandBtn').onclick=()=>{ state.werktijdenMode='maand'; renderWerktijden(); };
+  document.getElementById(state.werktijdenMode==='week'?'wtWeekBtn':'wtMaandBtn').classList.add('active');
+  const body=document.getElementById('wtBody');
+  if(state.werktijdenMode==='week') drawWerktijdenWeek(body);
+  else drawWerktijdenMaand(body);
+}
+
+function drawWerktijdenWeek(body){
+  const start=state.werktijdenWeekStart;
+  const days=[]; for(let i=0;i<7;i++) days.push(addDays(start,i));
+  body.innerHTML=`
+    <div class="week-nav">
+      <button id="wkPrev">‹</button>
+      <div class="wn-label">${MAANDEN[start.getMonth()]} ${start.getFullYear()}</div>
+      <button id="wkNext">›</button>
+    </div>
+    <div class="date-strip" id="wtStrip"></div>
+    <h2 class="section-title" style="margin:14px 16px 10px;">Werktijden deze week</h2>
+    <div id="wtShiftArea"></div>
+  `;
+  document.getElementById('wkPrev').onclick=()=>{ state.werktijdenWeekStart=addDays(state.werktijdenWeekStart,-7); drawWerktijdenWeek(body); };
+  document.getElementById('wkNext').onclick=()=>{ state.werktijdenWeekStart=addDays(state.werktijdenWeekStart,7); drawWerktijdenWeek(body); };
+  if(!state.werktijdenSelectedDate || !days.some(d=>toDateKeyFromDate(d)===state.werktijdenSelectedDate)){
+    state.werktijdenSelectedDate=toDateKeyFromDate(days[0]);
+  }
+  const stripEl=document.getElementById('wtStrip');
+  function redrawStrip(){
+    renderDateStrip(stripEl, days, state.werktijdenSelectedDate, (k)=>{
+      state.werktijdenSelectedDate=k;
+      redrawStrip();
+    });
+  }
+  redrawStrip();
+  renderWeekShiftList(document.getElementById('wtShiftArea'), days);
+}
+
+function renderWeekShiftList(el, days){
+  const uid_=state.currentUser.id;
+  el.innerHTML='';
+  days.forEach(d=>{
+    const key=toDateKeyFromDate(d);
+    const assigned=(state.schedule[key]||[]).some(a=>a.staffId===uid_);
+    const row=document.createElement('div');
+    row.className='week-day-row'+(assigned?' has-shift':'');
+    let bottomHtml='';
+    if(assigned){
+      const colleagues=colleaguesOn(key);
+      bottomHtml='<div class="wdr-colleagues">'+(colleagues.length>0 ? 'Met: '+colleagues.map(escapeHtml).join(', ') : 'Je werkt alleen')+'</div>';
+    }
+    row.innerHTML='<div class="wdr-top"><div class="wdr-date">'+capFirst(DAGEN[(d.getDay()+6)%7])+' '+d.getDate()+'/'+(d.getMonth()+1)+'</div>'
+      +'<div class="wdr-status">'+(assigned ? '<span class="status-badge avail">Ingepland</span>' : '<span class="wdr-empty">Geen werktijden</span>')+'</div></div>'
+      +bottomHtml;
+    el.appendChild(row);
+  });
+}
+
+function drawWerktijdenMaand(body){
+  body.innerHTML=`
+    <div class="month-nav" style="margin:0 16px 6px;">
+      <button id="wmPrev">‹</button>
+      <div class="label" id="wmLabel"></div>
+      <button id="wmNext">›</button>
+    </div>
+    <div class="weekday-row" style="margin:0 16px 6px;">${DAGEN.map(d=>'<div>'+d+'</div>').join('')}</div>
+    <div class="cal-grid" id="wmGrid" style="margin:0 16px;"></div>
+    <div id="wmShiftArea"></div>
+  `;
+  document.getElementById('wmPrev').onclick=()=>{ shiftMonth(-1); drawWerktijdenMaand(body); };
+  document.getElementById('wmNext').onclick=()=>{ shiftMonth(1); drawWerktijdenMaand(body); };
+
+  const y=state.calYear, m=state.calMonth;
+  document.getElementById('wmLabel').textContent=MAANDEN[m]+' '+y;
+  const grid=document.getElementById('wmGrid');
+  grid.innerHTML='';
+  const first=new Date(y,m,1);
+  let startDow=first.getDay(); startDow = startDow===0?6:startDow-1;
+  const daysInMonth=new Date(y,m+1,0).getDate();
+  for(let i=0;i<startDow;i++){ const e=document.createElement('div'); e.className='cal-day empty'; grid.appendChild(e); }
+  if(!state.werktijdenSelectedDate) state.werktijdenSelectedDate=toDateKeyFromDate(new Date());
+  const uid_=state.currentUser.id;
+  for(let d=1; d<=daysInMonth; d++){
+    const key=dateKey(y,m,d);
+    const assigned=(state.schedule[key]||[]).some(a=>a.staffId===uid_);
+    const cell=document.createElement('div');
+    cell.className='cal-day'+(assigned?' available':'')+(key===state.werktijdenSelectedDate?' selected-day':'');
+    cell.innerHTML='<span>'+d+'</span>';
+    cell.onclick=()=>{ state.werktijdenSelectedDate=key; drawWerktijdenMaand(body); };
+    grid.appendChild(cell);
+  }
+  renderShiftPanel(document.getElementById('wmShiftArea'), state.werktijdenSelectedDate, 'Geen werktijden!');
+}
+
+/* ================= BESCHIKBAARHEID ================= */
+
+function fmtShortDate(d){
+  return d.getDate()+'/'+(d.getMonth()+1)+'/'+String(d.getFullYear()).slice(-2);
+}
+
+function drawAdminWeekGrid(container){
+  container.innerHTML=`
+    <div class="week-nav" style="padding:14px 16px 4px;">
+      <button id="gPrevW">‹</button>
+      <div class="wn-label" id="gWeekLabel"></div>
+      <button id="gNextW">›</button>
+    </div>
+    <div style="margin:6px 16px 0;"><button class="btn-secondary" id="autoPlanBtn" style="width:100%;">✨ Automatisch plannen</button></div>
+    <p class="section-hint" style="margin:6px 16px 12px;">Tik op een dag bij een medewerker om klaar te zetten, en bevestig daarna onderaan.</p>
+    <div class="week-scroll" id="gridScroll"></div>
+    <div class="legend" style="margin:14px 16px 20px;">
+      <span><span class="sw-dash"></span>Beschikbaar opgegeven</span>
+      <span><span class="sw" style="background:var(--green)"></span>Ingepland</span>
+      <span><span class="sw" style="background:var(--amber)"></span>Nog te bevestigen</span>
+    </div>
+    <p class="section-hint" style="margin:0 16px 12px; color:var(--ink-soft);">Enkel medewerkers die zich beschikbaar hebben gemeld zie je hier — wie niet beschikbaar is, wordt niet bijgehouden.</p>
+    <div class="sticky-cta-wrap">
+      <button class="cta-green" id="confirmScheduleBtn" disabled>Bevestig inplanning</button>
+    </div>
+  `;
+  document.getElementById('gPrevW').onclick=()=>{ state.adminGridWeekStart=addDays(state.adminGridWeekStart,-7); drawAdminGridTable(); };
+  document.getElementById('gNextW').onclick=()=>{ state.adminGridWeekStart=addDays(state.adminGridWeekStart,7); drawAdminGridTable(); };
+  document.getElementById('confirmScheduleBtn').onclick=confirmScheduleChanges;
+  document.getElementById('autoPlanBtn').onclick=openAutoPlanDialog;
+  drawAdminGridTable();
+}
+
+function drawAdminGridTable(){
+  const start=state.adminGridWeekStart;
+  const days=[]; for(let i=0;i<7;i++) days.push(addDays(start,i));
+  document.getElementById('gWeekLabel').textContent = fmtShortDate(start)+' - '+fmtShortDate(days[6]);
+
+  const wrap=document.getElementById('gridScroll');
+  let html='<table class="grid-table"><thead><tr><th class="sticky-col">Medewerker</th>';
+  days.forEach(d=>{
+    const wd=capFirst(DAGEN[(d.getDay()+6)%7]);
+    html+='<th>'+wd+'<br>'+d.getDate()+'/'+(d.getMonth()+1)+'</th>';
+  });
+  html+='</tr></thead><tbody>';
+  state.users.filter(u=>!u.isKiosk).forEach(u=>{
+    html+='<tr><td class="sticky-col"><div class="gm-name">'+escapeHtml(u.name)+'</div><div class="gm-role">'+(u.isAdmin?'Administrator':'Medewerker')+'</div></td>';
+    days.forEach(d=>{
+      const key=toDateKeyFromDate(d);
+      const pKey=key+'|'+u.id;
+      const status=(state.availability[u.id]||{})[key];
+      const savedAssigned=(state.schedule[key]||[]).some(a=>a.staffId===u.id);
+      const hasPending=state.pendingScheduleChanges.hasOwnProperty(pKey);
+      const effectiveAssigned=hasPending ? state.pendingScheduleChanges[pKey] : savedAssigned;
+      let cellHtml='';
+      if(status==='available') cellHtml+='<div class="dash-chip avail">Beschikbaar</div>';
+      if(effectiveAssigned) cellHtml+='<div class="solid-chip'+(hasPending?' pending-chip':'')+'">Ingepland</div>';
+      html+='<td class="grid-cell'+(hasPending?' pending-change':'')+'" data-uid="'+u.id+'" data-date="'+key+'">'+cellHtml+'</td>';
+    });
+    html+='</tr>';
+  });
+  html+='</tbody></table>';
+  wrap.innerHTML=html;
+
+  wrap.querySelectorAll('.grid-cell').forEach(td=>{
+    td.onclick=()=>{
+      const uid_=td.getAttribute('data-uid');
+      const key=td.getAttribute('data-date');
+      const pKey=key+'|'+uid_;
+      const savedAssigned=(state.schedule[key]||[]).some(a=>a.staffId===uid_);
+      const hasPending=state.pendingScheduleChanges.hasOwnProperty(pKey);
+      const effective=hasPending ? state.pendingScheduleChanges[pKey] : savedAssigned;
+      state.pendingScheduleChanges[pKey]=!effective;
+      drawAdminGridTable();
+    };
+  });
+  updateConfirmScheduleBtn();
+}
+
+function updateConfirmScheduleBtn(){
+  const btn=document.getElementById('confirmScheduleBtn');
+  if(!btn) return;
+  const count=Object.keys(state.pendingScheduleChanges).length;
+  btn.disabled = count===0;
+  btn.textContent = count>0 ? 'Bevestig inplanning ('+count+')' : 'Bevestig inplanning';
+}
+
+async function confirmScheduleChanges(){
+  const toInsert=[]; const toDelete=[];
+  Object.entries(state.pendingScheduleChanges).forEach(([pKey,val])=>{
+    const sep=pKey.lastIndexOf('|');
+    const key=pKey.slice(0,sep);
+    const uid_=pKey.slice(sep+1);
+    if(!state.schedule[key]) state.schedule[key]=[];
+    const already=state.schedule[key].some(a=>a.staffId===uid_);
+    if(val && !already){ state.schedule[key].push({staffId:uid_}); toInsert.push({date:key, user_id:uid_}); }
+    if(!val && already){ state.schedule[key]=state.schedule[key].filter(a=>a.staffId!==uid_); toDelete.push({date:key, user_id:uid_}); }
+  });
+  state.pendingScheduleChanges={};
+  if(toInsert.length>0) await sb.from('schedule').upsert(toInsert);
+  for(const d of toDelete){ await sb.from('schedule').delete().eq('date', d.date).eq('user_id', d.user_id); }
+  drawAdminGridTable();
+}
+
+function renderBeschikbaarheid(){
+  const container=document.getElementById('mainContent');
+  if(state.currentUser.isAdmin){ drawAdminWeekGrid(container); return; }
+  container.innerHTML=`
+    <div class="tab-body-pad">
+      <p class="section-hint" style="margin:0 16px 14px;">Tik op de dagen waarop je kan werken, en geef ze daarna in één keer door.</p>
+      <div class="month-nav" style="margin:0 16px 10px;">
+        <button id="bPrevM">‹</button>
+        <div class="label" id="bMonthLabel"></div>
+        <button id="bNextM">›</button>
+      </div>
+      <div class="weekday-row" style="margin:0 16px 6px;">${DAGEN.map(d=>'<div>'+d+'</div>').join('')}</div>
+      <div class="cal-grid cal-grid-lg" id="bCalGrid" style="margin:0 16px;"></div>
+      <div class="legend" style="margin:16px 16px 0;">
+        <span><span class="sw" style="background:var(--green)"></span>Bevestigd beschikbaar</span>
+        <span><span class="sw-dash"></span>Nog te bevestigen</span>
+      </div>
+      <div class="sticky-cta-wrap">
+        <button class="cta-green" id="submitAvailBtn" disabled>Bevestig beschikbaarheid</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('bPrevM').onclick=()=>{ shiftMonth(-1); drawBeschikbaarheidCalendar(); };
+  document.getElementById('bNextM').onclick=()=>{ shiftMonth(1); drawBeschikbaarheidCalendar(); };
+  document.getElementById('submitAvailBtn').onclick=submitAvailability;
+  drawBeschikbaarheidCalendar();
+}
+
+function drawBeschikbaarheidCalendar(){
+  const y=state.calYear, m=state.calMonth;
+  document.getElementById('bMonthLabel').textContent=MAANDEN[m]+' '+y;
+  const grid=document.getElementById('bCalGrid');
+  grid.innerHTML='';
+  const first=new Date(y,m,1);
+  let startDow=first.getDay(); startDow = startDow===0?6:startDow-1;
+  const daysInMonth=new Date(y,m+1,0).getDate();
+  for(let i=0;i<startDow;i++){ const e=document.createElement('div'); e.className='cal-day empty'; grid.appendChild(e); }
+  const uid_=state.currentUser.id;
+  const savedAvail=state.availability[uid_] || {};
+  const todayKey=toDateKeyFromDate(new Date());
+  for(let d=1; d<=daysInMonth; d++){
+    const key=dateKey(y,m,d);
+    const isPast=key<todayKey;
+    const hasPending=state.pendingAvail.hasOwnProperty(key);
+    const pending=hasPending ? state.pendingAvail[key] : undefined;
+    const effective = hasPending ? pending : (savedAvail[key]||null);
+    const cell=document.createElement('div');
+    let cls='cal-day';
+    if(hasPending){
+      if(effective==='available') cls+=' pending-avail';
+    } else {
+      if(effective==='available') cls+=' available';
+    }
+    if(isPast) cls+=' cal-day-disabled';
+    cell.className=cls;
+    cell.innerHTML='<span>'+d+'</span>';
+    const assigned=(state.schedule[key]||[]).some(a=>a.staffId===uid_);
+    if(assigned){ const dot=document.createElement('div'); dot.className='shift-dot'; cell.appendChild(dot); }
+    if(!isPast){
+      cell.onclick=()=>{
+        const next = effective==='available' ? null : 'available';
+        state.pendingAvail[key]=next;
+        drawBeschikbaarheidCalendar();
+      };
+    }
+    grid.appendChild(cell);
+  }
+  const btn=document.getElementById('submitAvailBtn');
+  const pendingCount=Object.keys(state.pendingAvail).length;
+  btn.disabled = pendingCount===0;
+  btn.textContent = pendingCount>0 ? 'Bevestig beschikbaarheid ('+pendingCount+')' : 'Bevestig beschikbaarheid';
+}
+
+async function submitAvailability(){
+  const uid_=state.currentUser.id;
+  if(!state.availability[uid_]) state.availability[uid_]={};
+  const toInsert=[]; const toDeleteDates=[];
+  Object.entries(state.pendingAvail).forEach(([key,val])=>{
+    if(val===null){ delete state.availability[uid_][key]; toDeleteDates.push(key); }
+    else { state.availability[uid_][key]=val; toInsert.push({user_id:uid_, date:key, status:'available'}); }
+  });
+  state.pendingAvail={};
+  if(toInsert.length>0) await sb.from('availability').upsert(toInsert);
+  if(toDeleteDates.length>0) await sb.from('availability').delete().eq('user_id', uid_).in('date', toDeleteDates);
+  drawBeschikbaarheidCalendar();
+}
+
+/* ================= MEER ================= */
+function renderMeer(){
+  const container=document.getElementById('mainContent');
+  if(state.meerSubView){ drawMeerSubView(container); return; }
+  const isAdmin=state.currentUser.isAdmin;
+  const realAdmin=isRealAdmin();
+  container.innerHTML=`
+    <div class="profile-header2">
+      <div class="avatar-circle">${personIcon}</div>
+      <h2>${escapeHtml(state.currentUser.name)}</h2>
+      <div class="p-sub">${escapeHtml(brandName())}${isAdmin?' · administrator':''}</div>
+    </div>
+    ${realAdmin ? '<div class="menu-card"><button class="menu-item" id="quickSwitchBtn"><span class="m-ic">'+swapIcon+'</span><span class="m-label">Wissel gebruiker (test)</span><span class="m-arrow">›</span></button><button class="menu-item" id="loginAsEmployeeBtn"><span class="m-ic">'+peopleIcon+'</span><span class="m-label">Inloggen als werknemer</span><span class="m-arrow">›</span></button></div>' : ''}
+    <div class="menu-card" id="menuGroup1"></div>
+    <div class="menu-card">
+      <button class="menu-item" data-sv="profiel"><span class="m-ic">${userIcon}</span><span class="m-label">Profiel</span><span class="m-arrow">›</span></button>
+    </div>
+    <button class="logout-btn2" id="logoutBtn2">Uitloggen</button>
+  `;
+  let g1html='';
+  if(isAdmin){
+    g1html+='<button class="menu-item" data-sv="planning"><span class="m-ic">'+calendarCheckIcon+'</span><span class="m-label">Alle werktijden</span><span class="m-arrow">›</span></button>';
+    g1html+='<button class="menu-item" data-sv="beheer"><span class="m-ic">'+peopleIcon+'</span><span class="m-label">Gebruikers beheren</span><span class="m-arrow">›</span></button>';
+    g1html+='<button class="menu-item" data-sv="contracten"><span class="m-ic">'+contractIcon+'</span><span class="m-label">Contracten opmaken</span><span class="m-arrow">›</span></button>';
+    g1html+='<button class="menu-item" data-sv="planvoorkeuren"><span class="m-ic"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg></span><span class="m-label">Planningsvoorkeuren</span><span class="m-arrow">›</span></button>';
+  }
+  document.getElementById('menuGroup1').innerHTML=g1html;
+  container.querySelectorAll('[data-sv]').forEach(btn=>{
+    btn.onclick=()=>{ state.meerSubView=btn.getAttribute('data-sv'); renderMeer(); };
+  });
+  if(realAdmin){ document.getElementById('quickSwitchBtn').onclick=openQuickSwitchModal; document.getElementById('loginAsEmployeeBtn').onclick=openLoginAsEmployeeModal; }
+  document.getElementById('logoutBtn2').onclick=logout;
+}
+
+const MEER_TITLES={planning:'Alle werktijden', beheer:'Gebruikers beheren', berichtenbord:'Berichtenbord', profiel:'Profiel', tijdsregistraties:'Tijdsregistraties', contracten:'Contracten opmaken', planvoorkeuren:'Planningsvoorkeuren'};
+
+function drawMeerSubView(container){
+  container.innerHTML=`
+    <div class="subview-head">
+      <button class="back-btn2" id="meerBack">‹</button>
+      <div class="sv-title">${MEER_TITLES[state.meerSubView]}</div>
+    </div>
+    <div id="svBody" class="tab-body-pad"></div>
+  `;
+  document.getElementById('meerBack').onclick=()=>{ state.meerSubView=null; renderMeer(); };
+  const body=document.getElementById('svBody');
+  if(state.meerSubView==='planning') drawPlanningInto(body);
+  if(state.meerSubView==='beheer') drawBeheerInto(body);
+  if(state.meerSubView==='tijdsregistraties') drawTijdsregistratiesInto(body);
+  if(state.meerSubView==='contracten') drawContractenInto(body);
+  if(state.meerSubView==='planvoorkeuren') drawPlanningPrefsInto(body);
+  if(state.meerSubView==='berichtenbord') drawBerichtenInto(body);
+  if(state.meerSubView==='profiel') drawProfielInto(body);
+}
+
+function drawPlanningInto(body){
+  body.innerHTML=`
+    <p class="section-hint" style="margin:0 16px 14px;">Tik op een dag, en duid dan met het groene vinkje aan wie die dag moet werken.</p>
+    <div class="month-nav" style="margin:0 16px 14px;">
+      <button id="pPrevM">‹</button>
+      <div class="label" id="pMonthLabel"></div>
+      <button id="pNextM">›</button>
+    </div>
+    <div class="weekday-row" style="margin:0 16px 6px;">${DAGEN.map(d=>'<div>'+d+'</div>').join('')}</div>
+    <div class="cal-grid" id="pCalGrid" style="margin:0 16px;"></div>
+    <div class="legend" style="margin:16px 16px 0;">
+      <span><span class="sw" style="background:var(--navy)"></span>Aantal ingepland</span>
+      <span><span class="sw" style="background:var(--green)"></span>Aantal beschikbaar</span>
+    </div>
+  `;
+  document.getElementById('pPrevM').onclick=()=>{ shiftMonth(-1); drawPlanningInto(body); };
+  document.getElementById('pNextM').onclick=()=>{ shiftMonth(1); drawPlanningInto(body); };
+  drawPlanningCalendar();
+}
+
+function drawBeheerInto(body){
+  body.innerHTML=`
+    <p class="section-hint" style="margin:0 16px 14px;">Maak accounts aan voor medewerkers. Zij loggen de eerste keer in met het wachtwoord dat jij kiest, en stellen dan zelf een nieuw wachtwoord in.</p>
+    <div class="card" style="margin:0 16px 20px;">
+      <label class="field-label" style="margin-top:0;">Naam</label>
+      <input type="text" id="nuName" placeholder="Voor- en achternaam">
+      <label class="field-label">E-mailadres</label>
+      <input type="email" id="nuEmail" placeholder="naam@voorbeeld.be">
+      <label class="field-label">Tijdelijk wachtwoord</label>
+      <div class="field-row">
+        <div><input type="text" id="nuPw" placeholder="Tijdelijk wachtwoord"></div>
+        <button class="btn-ghost-sm" id="nuGen">Genereer</button>
+      </div>
+      <div class="toggle-row">
+        <input type="checkbox" id="nuAdmin" style="width:16px;height:16px;">
+        <label for="nuAdmin">Deze gebruiker is ook administrator</label>
+      </div>
+      <div class="toggle-row">
+        <input type="checkbox" id="nuKiosk" style="width:16px;height:16px;">
+        <label for="nuKiosk">Dit is een kiosk-scherm (toont enkel een QR-code om in/uit te klokken)</label>
+      </div>
+      <div class="err-msg" id="nuErr" style="display:none;"></div>
+      <div class="info-msg" id="nuOk" style="display:none;"></div>
+      <button class="btn-primary" id="nuBtn">Gebruiker aanmaken</button>
+    </div>
+    <h2 class="section-title" style="margin:0 16px 10px;">Medewerkers</h2>
+    <div class="card" id="userList" style="margin:0 16px 16px;"></div>
+  `;
+  document.getElementById('nuGen').onclick=()=>{ document.getElementById('nuPw').value=genTempPassword(); };
+  document.getElementById('nuAdmin').onchange=(e)=>{ if(e.target.checked) document.getElementById('nuKiosk').checked=false; };
+  document.getElementById('nuKiosk').onchange=(e)=>{ if(e.target.checked) document.getElementById('nuAdmin').checked=false; };
+  document.getElementById('nuBtn').onclick=createUser;
+  drawUserList();
+}
+
+function drawBerichtenInto(body){
+  const canPost=state.currentUser.isAdmin;
+  body.innerHTML=`
+    ${canPost ? `
+    <div class="msg-compose" style="margin:0 16px 18px;">
+      <textarea id="msgInput" placeholder="Schrijf een bericht…"></textarea>
+      <button id="msgSend">Plaats</button>
+    </div>` : `
+    <p class="section-hint" style="margin:0 16px 14px;">Enkel administrators kunnen berichten plaatsen.</p>`}
+    <div id="msgList" style="margin:0 16px;"></div>
+  `;
+  if(canPost){
+    document.getElementById('msgSend').onclick=async ()=>{
+      const ta=document.getElementById('msgInput');
+      const text=ta.value.trim();
+      if(!text) return;
+      const { data, error } = await sb.from('messages').insert({
+        author_id: state.currentUser.id, author_name: state.currentUser.name, text
+      }).select('id,created_at').single();
+      if(error){ showMessage(error.message); return; }
+      state.messages.unshift({ id:data.id, author:state.currentUser.name, text, ts:new Date(data.created_at).getTime() });
+      if(state.messages.length>150) state.messages=state.messages.slice(0,150);
+      ta.value='';
+      drawMessages();
+    };
+  }
+  drawMessages();
+}
+
+function drawProfielInto(body){
+  const u=state.currentUser;
+  body.innerHTML=`
+    <div class="info-line"><div class="il-label">Naam</div><div class="il-value">${escapeHtml(u.name)}</div></div>
+    <div class="info-line"><div class="il-label">E-mailadres</div><div class="il-value">${escapeHtml(u.email)}</div></div>
+    <div class="info-line"><div class="il-label">Rol</div><div class="il-value">${u.isAdmin?'Administrator':'Medewerker'}</div></div>
+    <h2 class="section-title" style="margin:20px 16px 10px;">Wachtwoord wijzigen</h2>
+    <div class="card" style="margin:0 16px 16px;">
+      <label class="field-label" style="margin-top:0;">Nieuw wachtwoord</label>
+      <input type="password" id="pwNew1" placeholder="Minstens 6 tekens">
+      <label class="field-label">Bevestig nieuw wachtwoord</label>
+      <input type="password" id="pwNew2" placeholder="Herhaal wachtwoord">
+      <div class="err-msg" id="pwErr" style="display:none;"></div>
+      <div class="info-msg" id="pwOk" style="display:none;"></div>
+      <button class="btn-primary" id="pwSaveBtn">Wachtwoord opslaan</button>
+    </div>
+  `;
+  document.getElementById('pwSaveBtn').onclick=async ()=>{
+    const errEl=document.getElementById('pwErr'); const okEl=document.getElementById('pwOk');
+    errEl.style.display='none'; okEl.style.display='none';
+    const p1=document.getElementById('pwNew1').value;
+    const p2=document.getElementById('pwNew2').value;
+    if(p1.length<6){ errEl.textContent='Wachtwoord moet minstens 6 tekens zijn.'; errEl.style.display='block'; return; }
+    if(p1!==p2){ errEl.textContent='Wachtwoorden komen niet overeen.'; errEl.style.display='block'; return; }
+    const { error: pwErr } = await sb.auth.updateUser({ password: p1 });
+    if(pwErr){ errEl.textContent='Kon wachtwoord niet aanpassen: '+pwErr.message; errEl.style.display='block'; return; }
+    okEl.textContent='Wachtwoord aangepast.'; okEl.style.display='block';
+    document.getElementById('pwNew1').value=''; document.getElementById('pwNew2').value='';
+  };
+}
+
+
+init();
+</script>
+</body>
+</html>

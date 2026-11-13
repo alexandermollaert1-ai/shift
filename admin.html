@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shift Beheer</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230A6E9E'/%3E%3Cpath d='M18 24h24l-7-7M46 40H22l7 7' stroke='%23fff' stroke-width='5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{ --bg:#F3F6F9; --surface:#fff; --ink:#16202A; --soft:#5B6773; --line:#DDE3E8; --brand:#0A6E9E; --brand-ink:#fff; --red:#C8123F; --green:#2F7D5C; --amber:#FBC913; --radius:12px; }
+  *{box-sizing:border-box;}
+  body{ margin:0; background:var(--bg); color:var(--ink); font-family:system-ui,-apple-system,'Segoe UI',sans-serif; }
+  button,input,select,textarea{ font:inherit; }
+  header.top{ background:#0B2A3C; color:#fff; padding:12px 20px; display:flex; align-items:center; gap:12px; position:sticky; top:0; z-index:5; }
+  header.top .logo{ width:30px; height:30px; }
+  header.top h1{ font-size:18px; margin:0; flex:1; }
+  header.top button{ background:transparent; color:#fff; border:1px solid rgba(255,255,255,.4); border-radius:8px; padding:6px 12px; cursor:pointer; }
+  main{ max-width:1100px; margin:0 auto; padding:20px 16px 60px; }
+  .cards{ display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px; margin-bottom:20px; }
+  .stat{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px; }
+  .stat .v{ font-size:26px; font-weight:800; } .stat .l{ color:var(--soft); font-size:13px; }
+  .bar{ display:flex; gap:10px; align-items:center; margin-bottom:12px; flex-wrap:wrap; }
+  .bar h2{ margin:0; flex:1; font-size:20px; }
+  .btn{ background:var(--brand); color:var(--brand-ink); border:none; border-radius:9px; padding:9px 16px; font-weight:700; cursor:pointer; }
+  .btn.ghost{ background:#fff; color:var(--brand); border:1px solid var(--brand); }
+  .btn.danger{ background:var(--red); } .btn.small{ padding:6px 10px; font-size:13px; }
+  .btn:disabled{ opacity:.5; cursor:default; }
+  table{ width:100%; border-collapse:collapse; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; }
+  th,td{ text-align:left; padding:10px 12px; border-bottom:1px solid var(--line); font-size:14px; vertical-align:middle; }
+  th{ background:#EEF2F5; font-size:12px; text-transform:uppercase; letter-spacing:.04em; color:var(--soft); }
+  tr.row{ cursor:pointer; } tr.row:hover td{ background:#F7FAFC; }
+  .tl{ display:flex; align-items:center; gap:10px; } .tl img,.tl .ph{ width:34px; height:34px; border-radius:8px; object-fit:cover; background:#E5EAEE; flex:none; }
+  .badge{ display:inline-block; padding:2px 9px; border-radius:99px; font-size:12px; font-weight:700; }
+  .badge.ok{ background:#DFF3E8; color:var(--green); } .badge.off{ background:#FBE0E7; color:var(--red); } .badge.open{ background:#FFF1BF; color:#6B4B00; }
+  .panel{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:18px; margin-bottom:16px; }
+  .panel h3{ margin:0 0 12px; font-size:16px; }
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:12px 16px; } @media(max-width:700px){ .grid2{ grid-template-columns:1fr; } }
+  label{ display:block; font-size:12px; font-weight:700; color:var(--soft); margin:0 0 4px; }
+  input[type=text],input[type=email],input[type=number],input[type=password],textarea,select{ width:100%; padding:9px 10px; border:1px solid var(--line); border-radius:8px; background:#fff; }
+  input[type=color]{ width:100%; height:38px; border:1px solid var(--line); border-radius:8px; padding:2px; background:#fff; }
+  .colors{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+  .prev{ border:1px solid var(--line); border-radius:10px; overflow:hidden; margin-top:10px; max-width:340px; }
+  .prev .h{ padding:10px 12px; display:flex; gap:10px; align-items:center; font-weight:800; } .prev .h img{ width:32px;height:32px;border-radius:8px;object-fit:cover; }
+  .prev .b{ padding:12px; display:flex; gap:8px; align-items:center; } .prev .chip{ padding:6px 12px; border-radius:8px; font-weight:700; font-size:13px; }
+  .err{ color:var(--red); font-size:13px; margin:8px 0; } .note{ color:var(--soft); font-size:13px; }
+  .login{ max-width:380px; margin:12vh auto; } .login .panel{ padding:24px; }
+  .modal{ position:fixed; inset:0; background:rgba(0,0,0,.45); display:flex; align-items:center; justify-content:center; padding:16px; z-index:50; }
+  .modal .box{ background:#fff; border-radius:14px; padding:20px; max-width:480px; width:100%; max-height:90vh; overflow:auto; }
+  .copyrow{ display:flex; gap:8px; align-items:center; margin:6px 0; } .copyrow code{ flex:1; background:#EEF2F5; padding:8px 10px; border-radius:8px; word-break:break-all; font-size:13px; }
+  .inv td,.inv th{ padding:7px 8px; }
+  .tscroll{ overflow-x:auto; border-radius:var(--radius); } .tscroll table{ min-width:640px; }
+  .copyrow{ flex-wrap:wrap; } #invBox{ overflow-x:auto; }
+  @media(max-width:700px){ .colors{ grid-template-columns:1fr 1fr 1fr; } main{ padding:14px 10px 50px; } header.top{ padding:10px 12px; } }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="modalRoot"></div>
+<script>
+// ==== VUL HIER JE SUPABASE-GEGEVENS IN ====
+const SUPABASE_URL = 'https://gvoawcmvvrraozwzxlbn.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_vj2MrAXUipG5CEvOFQW1kg_krSX6EaY';   // publieke sleutel: mag in de browser staan
+// Adres van de klant-app (index.html). Leeg = zelfde map als deze pagina.
+const APP_URL = '';
+// ============================================
+// Kom je via een uitnodigings- of herstelmail? Dan staat dat in het adres (#...type=invite|recovery).
+const HASH = new URLSearchParams((location.hash||'').replace(/^#/,''));
+const LINK_TYPE = HASH.get('type'); const LINK_ERROR = HASH.get('error_description');
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const LOGO_SVG='data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#0A6E9E"/><path d="M18 24h24l-7-7M46 40H22l7 7" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>');
+const st={ tenants:[], view:'list', selected:null, newLogo:undefined };
+
+const esc=s=>{ const d=document.createElement('div'); d.textContent=s==null?'':String(s); return d.innerHTML; };
+const $=id=>document.getElementById(id);
+const money=n=>'€ '+Number(n||0).toLocaleString('nl-BE',{minimumFractionDigits:2,maximumFractionDigits:2});
+function appBase(){ return APP_URL || (location.origin+location.pathname.replace(/[^/]*$/,'')+'index.html'); }
+function tenantLink(slug){ return appBase()+'?k='+encodeURIComponent(slug); }
+function genPw(){ const c='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'; let o=''; for(let i=0;i<10;i++) o+=c[Math.floor(Math.random()*c.length)]; return o; }
+function slugify(n){ return String(n||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,40); }
+function fmtDate(ts){ if(!ts) return '—'; const d=new Date(ts); return d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear(); }
+
+async function call(payload){
+  const { data } = await sb.auth.getSession();
+  const jwt = data&&data.session?data.session.access_token:null;
+  try{
+    const r=await fetch(SUPABASE_URL+'/functions/v1/platform-admin',{ method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt, apikey:SUPABASE_ANON_KEY}, body:JSON.stringify(payload) });
+    return await r.json();
+  }catch(e){ return {success:false,error:String(e)}; }
+}
+function modal(html){ const r=$('modalRoot'); r.innerHTML='<div class="modal"><div class="box">'+html+'</div></div>'; r.firstChild.addEventListener('click',e=>{ if(e.target===r.firstChild) closeModal(); }); }
+function closeModal(){ $('modalRoot').innerHTML=''; }
+function say(msg,title){ return new Promise(res=>{ modal('<h3 style="margin-top:0">'+esc(title||'Melding')+'</h3><div style="white-space:pre-wrap">'+msg+'</div><div style="text-align:right;margin-top:14px"><button class="btn" id="okBtn">OK</button></div>'); $('okBtn').onclick=()=>{ closeModal(); res(); }; }); }
+function ask(msg,okLabel,danger){ return new Promise(res=>{ modal('<div style="white-space:pre-wrap">'+esc(msg)+'</div><div style="text-align:right;margin-top:14px;display:flex;gap:8px;justify-content:flex-end"><button class="btn ghost" id="noBtn">Annuleren</button><button class="btn'+(danger?' danger':'')+'" id="yesBtn">'+esc(okLabel||'OK')+'</button></div>'); $('yesBtn').onclick=()=>{ closeModal(); res(true); }; $('noBtn').onclick=()=>{ closeModal(); res(false); }; }); }
+function copyBtn(text,btn){ try{ navigator.clipboard.writeText(text); }catch(e){} if(btn){ const o=btn.textContent; btn.textContent='Gekopieerd'; setTimeout(()=>btn.textContent=o,1200); } }
+
+/* ---------- login ---------- */
+function renderLogin(msg){
+  $('app').innerHTML=`<div class="login"><div class="panel"><div style="text-align:center"><img src="${LOGO_SVG}" width="56" height="56" alt="Shift"><h2 style="margin:8px 0 2px">Shift Beheer</h2><div class="note">Enkel voor Shift-medewerkers</div></div>
+    <label style="margin-top:16px">E-mailadres</label><input type="email" id="lgEmail" autocomplete="username">
+    <label style="margin-top:10px">Wachtwoord</label><input type="password" id="lgPw" autocomplete="current-password">
+    <div class="err" id="lgErr">${msg?esc(msg):''}</div><button class="btn" style="width:100%" id="lgBtn">Inloggen</button>
+    <div style="text-align:center;margin-top:12px"><a href="#" id="lgForgot" class="note">Wachtwoord vergeten?</a></div></div></div>`;
+  $('lgForgot').onclick=async e=>{
+    e.preventDefault(); const email=$('lgEmail').value.trim().toLowerCase();
+    if(!email){ $('lgErr').textContent='Vul eerst je e-mailadres in.'; return; }
+    await sb.auth.resetPasswordForEmail(email,{ redirectTo: location.origin+location.pathname });
+    $('lgErr').style.color='var(--green)'; $('lgErr').textContent='Als dit adres bekend is, krijg je een mail met een link om een nieuw wachtwoord te kiezen.';
+  };
+  const go=async()=>{
+    const email=$('lgEmail').value.trim().toLowerCase(), pw=$('lgPw').value;
+    if(!email||!pw){ $('lgErr').textContent='Vul e-mail en wachtwoord in.'; return; }
+    const { error } = await sb.auth.signInWithPassword({email,password:pw});
+    if(error){ $('lgErr').textContent='Onjuiste e-mail of wachtwoord.'; return; }
+    await loadTenants(true);
+  };
+  $('lgBtn').onclick=go; $('lgPw').addEventListener('keydown',e=>{ if(e.key==='Enter') go(); });
+}
+async function logout(){ await sb.auth.signOut(); renderLogin(); }
+function renderSetPassword(){
+  $('app').innerHTML=`<div class="login"><div class="panel"><div style="text-align:center"><img src="${LOGO_SVG}" width="56" height="56" alt="Shift"><h2 style="margin:8px 0 2px">Kies je wachtwoord</h2><div class="note">Dit wachtwoord gebruik je voortaan om in te loggen op Shift Beheer.</div></div>
+    <label style="margin-top:16px">Nieuw wachtwoord</label><input type="password" id="spPw1" autocomplete="new-password" placeholder="Minstens 10 tekens">
+    <label style="margin-top:10px">Herhaal wachtwoord</label><input type="password" id="spPw2" autocomplete="new-password">
+    <div class="err" id="spErr"></div><button class="btn" style="width:100%" id="spBtn">Wachtwoord opslaan</button></div></div>`;
+  const go=async()=>{
+    const p1=$('spPw1').value, p2=$('spPw2').value;
+    if(p1.length<10){ $('spErr').textContent='Kies een wachtwoord van minstens 10 tekens.'; return; }
+    if(p1!==p2){ $('spErr').textContent='De wachtwoorden komen niet overeen.'; return; }
+    const { error } = await sb.auth.updateUser({ password:p1 });
+    if(error){ $('spErr').textContent='Opslaan mislukt: '+error.message; return; }
+    await loadTenants(true);
+  };
+  $('spBtn').onclick=go; $('spPw2').addEventListener('keydown',e=>{ if(e.key==='Enter') go(); });
+}
+
+async function loadTenants(fromLogin){
+  const r=await call({action:'list'});
+  if(!r.success){
+    if(fromLogin){ await sb.auth.signOut(); renderLogin(r.error==='Geen toegang.'?'Dit account heeft geen toegang tot Shift Beheer.':(r.error||'Fout')); }
+    else await say(esc(r.error||'Laden mislukt.'));
+    return false;
+  }
+  st.tenants=r.tenants; render(); return true;
+}
+
+function shell(inner){
+  return `<header class="top"><img class="logo" src="${LOGO_SVG}" alt=""><h1>Shift Beheer</h1><button id="outBtn">Uitloggen</button></header><main>${inner}</main>`;
+}
+function render(){
+  if(st.view==='new') return renderForm(null);
+  if(st.view==='detail') return renderDetail();
+  renderList();
+}
+
+/* ---------- lijst ---------- */
+function renderList(){
+  const act=st.tenants.filter(t=>t.active);
+  const mrr=act.reduce((s,t)=>s+Number(t.price_month||0),0);
+  const users=st.tenants.reduce((s,t)=>s+t.users,0);
+  const open=st.tenants.reduce((s,t)=>s+Number(t.open_amount||0),0);
+  const rows=st.tenants.map(t=>`<tr class="row" data-id="${t.id}">
+    <td><div class="tl">${t.logo?`<img src="${esc(t.logo)}" alt="">`:'<div class="ph"></div>'}<div><b>${esc(t.name)}</b><div class="note">${esc(t.slug)}</div></div></div></td>
+    <td>${t.active?'<span class="badge ok">Actief</span>':'<span class="badge off">Geblokkeerd</span>'}</td>
+    <td>${t.users}${t.max_users?' / '+t.max_users:''}</td>
+    <td>${t.price_month!=null?money(t.price_month):'—'}</td>
+    <td>${t.open_amount>0?'<span class="badge open">'+money(t.open_amount)+'</span>':'—'}</td>
+    <td>${fmtDate(t.last_activity)}</td></tr>`).join('');
+  $('app').innerHTML=shell(`
+    <div class="cards">
+      <div class="stat"><div class="v">${act.length}</div><div class="l">Actieve klanten</div></div>
+      <div class="stat"><div class="v">${users}</div><div class="l">Gebruikers in totaal</div></div>
+      <div class="stat"><div class="v">${money(mrr)}</div><div class="l">Maandelijkse omzet (excl. btw)</div></div>
+      <div class="stat"><div class="v">${money(open)}</div><div class="l">Openstaand</div></div>
+    </div>
+    <div class="bar"><h2>Klanten</h2><button class="btn" id="newBtn">+ Nieuwe klant</button></div>
+    ${st.tenants.length?`<div class="tscroll"><table><thead><tr><th>Klant</th><th>Status</th><th>Gebruikers</th><th>Prijs/maand</th><th>Openstaand</th><th>Laatste activiteit</th></tr></thead><tbody>${rows}</tbody></table></div>`:'<div class="panel note">Nog geen klanten. Klik op "Nieuwe klant" om de eerste toe te voegen.</div>'}`);
+  $('outBtn').onclick=logout; $('newBtn').onclick=()=>{ st.view='new'; st.newLogo=undefined; render(); };
+  document.querySelectorAll('tr.row').forEach(r=>r.onclick=()=>{ st.selected=st.tenants.find(t=>t.id===r.dataset.id); st.view='detail'; st.newLogo=undefined; render(); });
+}
+
+/* ---------- formulier (nieuw + bewerken) ---------- */
+function previewHtml(){ return `<div class="prev"><div class="h" id="pvH"><img id="pvImg" alt=""><span id="pvName"></span></div><div class="b" id="pvB"><span class="chip" id="pvP">Knop</span><span class="chip" id="pvA">Accent</span></div></div><div class="note" id="pvWarn"></div>`; }
+function updatePreview(){
+  const p=$('fPrimary').value, s=$('fSecondary').value, a=$('fAccent').value;
+  const L=h=>{ h=h.replace('#',''); const c=[0,2,4].map(i=>parseInt(h.substr(i,2),16)/255).map(v=>v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4)); return .2126*c[0]+.7152*c[1]+.0722*c[2]; };
+  const on=h=>L(h)>.35?'#16202A':'#fff';
+  $('pvH').style.background=s; $('pvH').style.color=on(s);
+  $('pvName').textContent=$('fName').value||'Naam klant';
+  $('pvImg').src=st.newLogo!==undefined?(st.newLogo||''):((st.selected&&st.selected.logo)||''); $('pvImg').style.display=$('pvImg').getAttribute('src')?'block':'none';
+  $('pvP').style.background=p; $('pvP').style.color='#fff'; $('pvA').style.background=a; $('pvA').style.color=on(a);
+  $('pvWarn').textContent=L(p)>.35?'Let op: de hoofdkleur is erg licht; witte tekst op knoppen wordt slecht leesbaar. Kies een donkerdere kleur.':'';
+}
+function resizeLogo(file){
+  return new Promise((res,rej)=>{
+    const fr=new FileReader();
+    fr.onload=()=>{ const im=new Image(); im.onload=()=>{
+      const max=256, k=Math.min(1,max/Math.max(im.width,im.height));
+      const c=document.createElement('canvas'); c.width=Math.max(1,Math.round(im.width*k)); c.height=Math.max(1,Math.round(im.height*k));
+      c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+      let out=c.toDataURL('image/png'); if(out.length>300000) out=c.toDataURL('image/jpeg',0.85);
+      res(out); };
+      im.onerror=()=>rej(new Error('Dit bestand is geen geldige afbeelding.')); im.src=fr.result; };
+    fr.onerror=()=>rej(new Error('Lezen mislukt.')); fr.readAsDataURL(file);
+  });
+}
+function fieldsHtml(t){
+  t=t||{};
+  return `<div class="grid2">
+    <div><label>Naam (zoals getoond in de app)</label><input type="text" id="fName" value="${esc(t.name||'')}"></div>
+    <div><label>Bedrijfscode (in de link)</label><input type="text" id="fSlug" value="${esc(t.slug||'')}" ${t.id?'disabled':''} placeholder="bv. vroemfabriek"></div>
+    <div><label>Juridische naam (voor contractmails)</label><input type="text" id="fLegal" value="${esc(t.legal_name||'')}" placeholder="bv. Squaremeters BV"></div>
+    <div><label>Logo (afbeelding)</label><input type="file" id="fLogo" accept="image/*"></div>
+  </div>
+  <div class="colors" style="margin-top:12px"><div><label>Hoofdkleur</label><input type="color" id="fPrimary" value="${esc(t.color_primary||'#0A6E9E')}"></div>
+  <div><label>Kopbalk-kleur</label><input type="color" id="fSecondary" value="${esc(t.color_secondary||'#019BDB')}"></div>
+  <div><label>Accentkleur</label><input type="color" id="fAccent" value="${esc(t.color_accent||'#FBC913')}"></div></div>
+  ${previewHtml()}
+  <h3 style="margin-top:18px">Abonnement</h3>
+  <div class="grid2">
+    <div><label>Plan</label><input type="text" id="fPlan" value="${esc(t.plan||'standaard')}"></div>
+    <div><label>Prijs per maand (excl. btw)</label><input type="number" step="0.01" min="0" id="fPrice" value="${t.price_month!=null?esc(t.price_month):''}"></div>
+    <div><label>Max. aantal gebruikers (leeg = onbeperkt)</label><input type="number" min="1" id="fMax" value="${t.max_users!=null?esc(t.max_users):''}"></div>
+    <div><label>Facturatie e-mail</label><input type="email" id="fBillMail" value="${esc(t.billing_email||'')}"></div>
+    <div><label>BTW-nummer</label><input type="text" id="fVat" value="${esc(t.vat_number||'')}"></div>
+    <div><label>Notities</label><textarea id="fNotes" rows="2">${esc(t.notes||'')}</textarea></div>
+  </div>`;
+}
+function wireFields(){
+  ['fName','fPrimary','fSecondary','fAccent'].forEach(i=>$(i).addEventListener('input',updatePreview));
+  $('fLogo').onchange=async e=>{ const f=e.target.files[0]; if(!f) return; try{ st.newLogo=await resizeLogo(f); updatePreview(); }catch(err){ say(esc(err.message)); } };
+  updatePreview();
+}
+function readFields(){
+  const num=v=>v===''?null:Number(v);
+  const o={ name:$('fName').value.trim(), legal_name:$('fLegal').value.trim(), color_primary:$('fPrimary').value, color_secondary:$('fSecondary').value, color_accent:$('fAccent').value,
+    plan:$('fPlan').value.trim()||'standaard', price_month:num($('fPrice').value), max_users:num($('fMax').value), billing_email:$('fBillMail').value.trim(), vat_number:$('fVat').value.trim(), notes:$('fNotes').value.trim() };
+  if(st.newLogo!==undefined) o.logo=st.newLogo||'';
+  return o;
+}
+function renderForm(){
+  $('app').innerHTML=shell(`<div class="bar"><h2>Nieuwe klant</h2><button class="btn ghost" id="backBtn">Terug</button></div>
+    <div class="panel"><h3>Klantgegevens en uitzicht</h3>${fieldsHtml(null)}</div>
+    <div class="panel"><h3>Eerste beheerder van de klant</h3><div class="grid2">
+      <div><label>Naam</label><input type="text" id="aName"></div><div><label>E-mailadres</label><input type="email" id="aEmail"></div>
+      <div><label>Tijdelijk wachtwoord</label><div style="display:flex;gap:6px"><input type="text" id="aPw" value="${genPw()}"><button class="btn ghost small" id="aGen">Nieuw</button></div></div></div>
+      <div class="note" style="margin-top:8px">De beheerder moet dit wachtwoord bij de eerste login zelf vervangen. Een e-mailadres kan maar bij één klant gebruikt worden.</div></div>
+    <div class="err" id="fErr"></div><button class="btn" id="saveBtn">Klant aanmaken</button>`);
+  $('outBtn').onclick=logout; $('backBtn').onclick=()=>{ st.view='list'; render(); };
+  wireFields(); $('aGen').onclick=()=>{ $('aPw').value=genPw(); };
+  let slugTouched=false; $('fSlug').addEventListener('input',()=>slugTouched=true);
+  $('fName').addEventListener('input',()=>{ if(!slugTouched) $('fSlug').value=slugify($('fName').value); });
+  $('saveBtn').onclick=async()=>{
+    const f=readFields(); const slug=$('fSlug').value.trim().toLowerCase();
+    const an=$('aName').value.trim(), ae=$('aEmail').value.trim(), ap=$('aPw').value;
+    if(!f.name||!slug||!an||!ae||!ap){ $('fErr').textContent='Vul naam, bedrijfscode en de gegevens van de beheerder in.'; return; }
+    $('saveBtn').disabled=true; $('fErr').textContent='';
+    const r=await call(Object.assign({action:'create_tenant',slug,adminName:an,adminEmail:ae,tempPassword:ap},f));
+    $('saveBtn').disabled=false;
+    if(!r.success){ $('fErr').textContent=r.error||'Aanmaken mislukt.'; return; }
+    const link=tenantLink(slug);
+    await loadTenants();
+    st.view='list'; render();
+    modal(`<h3 style="margin-top:0">Klant aangemaakt: ${esc(f.name)}</h3><div class="note">Bezorg dit aan de beheerder van de klant:</div>
+      <label style="margin-top:10px">Link naar de app</label><div class="copyrow"><code>${esc(link)}</code><button class="btn small ghost" id="c1">Kopieer</button></div>
+      <label>E-mail</label><div class="copyrow"><code>${esc(ae.toLowerCase())}</code></div>
+      <label>Tijdelijk wachtwoord</label><div class="copyrow"><code>${esc(ap)}</code><button class="btn small ghost" id="c2">Kopieer</button></div>
+      <div class="note">Bedrijfscode: <b>${esc(slug)}</b> (werknemers kunnen die ook invullen op het startscherm).</div>
+      <div style="text-align:right;margin-top:14px"><button class="btn" id="okBtn">Klaar</button></div>`);
+    $('c1').onclick=e=>copyBtn(link,e.target); $('c2').onclick=e=>copyBtn(ap,e.target); $('okBtn').onclick=closeModal;
+  };
+}
+
+/* ---------- detail ---------- */
+async function renderDetail(){
+  const t=st.selected; if(!t){ st.view='list'; return render(); }
+  const link=tenantLink(t.slug);
+  $('app').innerHTML=shell(`<div class="bar"><h2>${esc(t.name)} ${t.active?'<span class="badge ok">Actief</span>':'<span class="badge off">Geblokkeerd</span>'}</h2><button class="btn ghost" id="backBtn">Terug</button></div>
+    <div class="panel"><h3>Toegang</h3><label>Link naar de app voor deze klant</label><div class="copyrow"><code>${esc(link)}</code><button class="btn small ghost" id="cLink">Kopieer</button></div>
+      <div class="note">${t.users} gebruiker(s)${t.max_users?' van max. '+t.max_users:''} · laatste activiteit: ${fmtDate(t.last_activity)} · aangemaakt: ${fmtDate(t.created_at)}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn small ${t.active?'danger':''}" id="toggleBtn">${t.active?'Blokkeren':'Activeren'}</button><button class="btn small ghost" id="pwBtn">Wachtwoord beheerder resetten</button></div></div>
+    <div class="panel"><h3>Klantgegevens en uitzicht</h3>${fieldsHtml(t)}<div class="err" id="fErr"></div><button class="btn" id="saveBtn">Opslaan</button>${t.logo?' <button class="btn ghost small" id="noLogo">Logo verwijderen</button>':''}</div>
+    <div class="panel"><h3>Facturen</h3><div id="invBox" class="note">Laden…</div>
+      <div class="grid2" style="margin-top:10px;align-items:end"><div><label>Periode (bv. 2026-11)</label><input type="text" id="iPeriod" value="${new Date().toISOString().slice(0,7)}"></div>
+      <div><label>Bedrag (excl. btw)</label><input type="number" step="0.01" id="iAmount" value="${t.price_month!=null?esc(t.price_month):''}"></div></div>
+      <button class="btn small" style="margin-top:8px" id="iAdd">Factuur toevoegen</button></div>
+    <div class="panel"><h3>Gevaarlijke zone</h3><div class="note">Een klant verwijderen wist alle gegevens en accounts definitief. Overweeg eerst te blokkeren.</div><button class="btn danger small" style="margin-top:8px" id="delBtn">Klant definitief verwijderen</button></div>`);
+  $('outBtn').onclick=logout; $('backBtn').onclick=()=>{ st.view='list'; render(); };
+  $('cLink').onclick=e=>copyBtn(link,e.target);
+  wireFields();
+  $('toggleBtn').onclick=async()=>{
+    const to=!t.active;
+    if(!await ask(to?'Klant opnieuw activeren?':'Klant blokkeren? Niemand van deze klant kan dan nog inloggen of klokken.', to?'Activeren':'Blokkeren', !to)) return;
+    const r=await call({action:'set_active',tenantId:t.id,active:to}); if(!r.success){ await say(esc(r.error)); return; }
+    await refreshSelected();
+  };
+  $('saveBtn').onclick=async()=>{
+    const f=readFields(); if(!f.name){ $('fErr').textContent='Naam is verplicht.'; return; }
+    $('saveBtn').disabled=true;
+    const r=await call(Object.assign({action:'update_tenant',tenantId:t.id},f)); $('saveBtn').disabled=false;
+    if(!r.success){ $('fErr').textContent=r.error||'Opslaan mislukt.'; return; }
+    st.newLogo=undefined; await refreshSelected(); await say('Opgeslagen.');
+  };
+  if($('noLogo')) $('noLogo').onclick=async()=>{ const r=await call({action:'update_tenant',tenantId:t.id,name:t.name,logo:''}); if(!r.success){ await say(esc(r.error)); return; } await refreshSelected(); };
+  $('pwBtn').onclick=async()=>{
+    const r=await call({action:'list_admins',tenantId:t.id}); const admins=r.admins||[];
+    if(!admins.length){ await say('Deze klant heeft geen beheerder.'); return; }
+    modal(`<h3 style="margin-top:0">Wachtwoord beheerder resetten</h3><label>Beheerder</label><select id="rAdmin">${admins.map(a=>`<option value="${a.id}">${esc(a.name)} (${esc(a.email)})</option>`).join('')}</select>
+      <label style="margin-top:10px">Nieuw tijdelijk wachtwoord</label><input type="text" id="rPw" value="${genPw()}"><div class="err" id="rErr"></div>
+      <div style="text-align:right;margin-top:10px;display:flex;gap:8px;justify-content:flex-end"><button class="btn ghost" id="rNo">Annuleren</button><button class="btn" id="rYes">Resetten</button></div>`);
+    $('rNo').onclick=closeModal;
+    $('rYes').onclick=async()=>{ const pw=$('rPw').value; const rr=await call({action:'reset_admin_password',tenantId:t.id,userId:$('rAdmin').value,tempPassword:pw}); if(!rr.success){ $('rErr').textContent=rr.error; return; } closeModal(); await say('Nieuw tijdelijk wachtwoord: <b>'+esc(pw)+'</b>\nGeef dit door aan de beheerder.'); };
+  };
+  $('delBtn').onclick=async()=>{
+    modal(`<h3 style="margin-top:0">Klant verwijderen</h3><div>Typ de bedrijfscode <b>${esc(t.slug)}</b> om te bevestigen. Dit kan niet ongedaan gemaakt worden.</div><input type="text" id="dConf" style="margin-top:10px"><div class="err" id="dErr"></div>
+      <div style="text-align:right;margin-top:10px;display:flex;gap:8px;justify-content:flex-end"><button class="btn ghost" id="dNo">Annuleren</button><button class="btn danger" id="dYes">Verwijderen</button></div>`);
+    $('dNo').onclick=closeModal;
+    $('dYes').onclick=async()=>{ const r=await call({action:'delete_tenant',tenantId:t.id,confirmSlug:$('dConf').value.trim()}); if(!r.success){ $('dErr').textContent=r.error; return; } closeModal(); st.view='list'; await loadTenants(); };
+  };
+  loadInvoices();
+  $('iAdd').onclick=async()=>{ const r=await call({action:'add_invoice',tenantId:t.id,period:$('iPeriod').value.trim(),amount:$('iAmount').value}); if(!r.success){ await say(esc(r.error)); return; } await loadInvoices(); await refreshList(); };
+}
+async function refreshList(){ const r=await call({action:'list'}); if(r.success){ st.tenants=r.tenants; st.selected=st.tenants.find(x=>x.id===st.selected.id)||st.selected; } }
+async function refreshSelected(){ await refreshList(); render(); }
+async function loadInvoices(){
+  const t=st.selected; const r=await call({action:'list_invoices',tenantId:t.id}); const box=$('invBox'); if(!box) return;
+  const inv=r.invoices||[];
+  box.innerHTML=inv.length?`<table class="inv"><thead><tr><th>Periode</th><th>Bedrag</th><th>Status</th><th></th></tr></thead><tbody>${inv.map(i=>`<tr><td>${esc(i.period)}</td><td>${money(i.amount)}</td><td>${i.status==='betaald'?'<span class="badge ok">Betaald</span>':'<span class="badge open">Open</span>'}</td><td style="text-align:right"><button class="btn small ghost" data-st="${i.id}" data-to="${i.status==='betaald'?'open':'betaald'}">${i.status==='betaald'?'Terug op open':'Markeer betaald'}</button> <button class="btn small ghost" data-del="${i.id}">×</button></td></tr>`).join('')}</tbody></table>`:'Nog geen facturen.';
+  box.querySelectorAll('[data-st]').forEach(b=>b.onclick=async()=>{ await call({action:'set_invoice_status',invoiceId:b.dataset.st,status:b.dataset.to}); await loadInvoices(); await refreshList(); });
+  box.querySelectorAll('[data-del]').forEach(b=>b.onclick=async()=>{ if(!await ask('Factuur verwijderen?','Verwijderen',true)) return; await call({action:'delete_invoice',invoiceId:b.dataset.del}); await loadInvoices(); await refreshList(); });
+}
+
+/* ---------- start ---------- */
+(async function init(){
+  if(SUPABASE_URL.indexOf('YOUR-PROJECT')!==-1){ $('app').innerHTML='<div class="login"><div class="panel"><h2>Nog niet gekoppeld</h2><p>Vul SUPABASE_URL en SUPABASE_ANON_KEY in bovenaan het script van dit bestand.</p></div></div>'; return; }
+  const { data } = await sb.auth.getSession();
+  if(data && data.session && (LINK_TYPE==='invite' || LINK_TYPE==='recovery')){ renderSetPassword(); return; }
+  if(LINK_ERROR){ renderLogin('Deze link is verlopen of al gebruikt. Vraag een nieuwe via "Wachtwoord vergeten?".'); return; }
+  if(data && data.session){ const ok=await loadTenants(true); if(!ok) return; } else renderLogin();
+})();
+</script>
+</body>
+</html>
