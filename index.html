@@ -3,6 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<!-- Beveiliging: enkel het script van deze pagina (herkend aan zijn hash) en de vastgepinde bibliotheken mogen draaien.
+     LET OP: wijzigt het scriptblok onderaan, dan moet de sha256-hash hieronder opnieuw berekend worden, anders start de app niet. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-OG1jNWFFb6I8cwjZSVUWhuZ+3CVgslLrrIg7tROK3uI=' https://cdn.jsdelivr.net/npm/@supabase/ https://cdn.jsdelivr.net/npm/jsqr@1.4.0/ https://cdnjs.cloudflare.com/ajax/libs/; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src data: blob:; connect-src https://vdtxzfvzonojrhrjbjmg.supabase.co; manifest-src blob:; media-src blob: mediastream:; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta name="referrer" content="no-referrer">
 <title>Shift</title>
 <link rel="icon" href="data:," id="favIcon">
 <link rel="apple-touch-icon" id="appleIcon" href="data:,">
@@ -11,10 +15,10 @@
 <meta name="apple-mobile-web-app-title" content="Shift" id="appTitleMeta">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&family=Archivo+Black&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.js" integrity="sha384-uteMfOloLDGt042uDz+xHGF3ym63/WQ6rFq7murQRG8Ih7QrXGEGNtWd8688sb4O" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" integrity="sha384-3zSEDfvllQohrq0PHL1fOXJuC/jSOO34H46t6UQfobFOmxE5BpjjaIJY5F2/bMnU" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js" integrity="sha384-b5Ya4Bq3qCyz39m2ISh+4DxjAIljdeFwK/BsXLuj9gugaNwAcj/ia15fxNZL9Nlx" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" integrity="sha384-vtjasyidUo0kW94K5MXDXntzOJpQgBKXmE7e2Ga4LG0skTTLeBi97eFAXsqewJjw" crossorigin="anonymous"></script>
 <style>
   :root{
     --bg:#E7F4FB;
@@ -721,11 +725,13 @@
 </div>
 
 <script>
+if(window.top!==window.self){ try{ window.top.location=window.self.location.href; }catch(e){ document.documentElement.innerHTML=''; throw new Error('Deze pagina mag niet in een frame geladen worden.'); } }
 const MAANDEN=['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
 const DAGEN=['ma','di','wo','do','vr','za','zo'];
 const DEFAULT_LOGO='data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#0A6E9E"/><path d="M18 24h24l-7-7M46 40H22l7 7" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>');
 const DEFAULT_BRAND={ id:null, slug:null, name:'Shift', legal_name:null, logo:null, color_primary:'#0A6E9E', color_secondary:'#019BDB', color_accent:'#FBC913', active:true };
-function brandLogo(){ return (state.tenant&&state.tenant.logo)||DEFAULT_LOGO; }
+const LOGO_RE=/^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+\/=]+$/;
+function brandLogo(){ const l=state.tenant&&state.tenant.logo; return (l&&LOGO_RE.test(l)) ? l : DEFAULT_LOGO; }
 function brandName(){ return (state.tenant&&state.tenant.name)||'Shift'; }
 function brandLegal(){ const t=state.tenant; return t&&t.legal_name ? t.name+' / '+t.legal_name : brandName(); }
 function brandSlugFile(){ return (state.tenant&&state.tenant.slug)||'shift'; }
@@ -770,7 +776,6 @@ let state={
   users:[],
   availability:{},
   timeEntries:[],
-  kioskSecret:null,
   paidHours:{},
   ledgerMonthKey:null,
   contractWeekStart:mondayNow(),
@@ -805,12 +810,14 @@ function ymKey(y,m){ return y+'-'+String(m+1).padStart(2,'0'); }
 function uid(){ return Math.random().toString(36).slice(2,10); }
 function genTempPassword(){
   const chars='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
-  let out='';
-  for(let i=0;i<8;i++) out+=chars[Math.floor(Math.random()*chars.length)];
+  // Cryptografisch willekeurig (niet Math.random): tijdelijke wachtwoorden mogen niet voorspelbaar zijn.
+  let out=''; const max=256-(256%chars.length);
+  while(out.length<10){ const b=crypto.getRandomValues(new Uint8Array(16)); for(const v of b){ if(v<max && out.length<10) out+=chars[v%chars.length]; } }
   return out;
 }
 function escapeHtml(str){
-  const d=document.createElement('div'); d.textContent=str; return d.innerHTML;
+  // Ook aanhalingstekens escapen: de uitvoer wordt ook binnen attributen (value="...", alt="...") gebruikt.
+  return String(str==null?'':str).replace(/[&<>"'`]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','`':'&#96;'}[c]));
 }
 async function sha256Hex(str){
   const enc=new TextEncoder().encode(str);
@@ -854,20 +861,21 @@ async function fetchAll(table, cols, orders){
 async function loadAll(){
   const uidMe = state.currentUser ? state.currentUser.id : null;
 
-  const [profilesRes, availRes, schedRes, msgRes, timeRes, paidRes, kioskRes, settingsRes, personalRes] = await Promise.all([
-    sb.from('profiles').select('id,name,email,is_admin,is_kiosk,must_change_password'),
+  const [profilesRes, availRes, schedRes, msgRes, timeRes, paidRes, emailsRes, settingsRes, personalRes] = await Promise.all([
+    sb.from('profiles').select('id,name,is_admin,is_kiosk,must_change_password,active'),
     fetchAll('availability','user_id,date',['user_id','date']),
     fetchAll('schedule','date,user_id',['date','user_id']),
     sb.from('messages').select('id,author_name,text,created_at').order('created_at',{ascending:false}).limit(150),
     fetchAll('time_entries','id,user_id,type,ts,manual',['ts','id']),
     fetchAll('paid_hours','user_id,week_start,hours',['user_id','week_start']),
-    sb.from('kiosk_secret').select('secret').maybeSingle(),
+    sb.rpc('tenant_emails'),   // e-mailadressen: de beheerder krijgt die van iedereen, een werknemer enkel zijn eigen adres
     sb.from('app_settings').select('key,value'),
     sb.from('personal_data').select('user_id,last_name,first_name,birth_date,street,postal,city'),
   ]);
 
+  const emailById={}; (emailsRes.data||[]).forEach(r=>{ emailById[r.id]=r.email; });
   state.users = (profilesRes.data||[]).map(p=>({
-    id:p.id, name:p.name, email:p.email,
+    id:p.id, name:p.name, email:emailById[p.id]||'', active:p.active!==false,
     isAdmin:p.is_admin, isKiosk:p.is_kiosk, mustChangePassword:p.must_change_password
   }));
   (personalRes.data||[]).forEach(r=>{
@@ -897,7 +905,6 @@ async function loadAll(){
     state.paidHours[row.user_id][row.week_start]=Number(row.hours);
   });
 
-  state.kioskSecret = kioskRes.data ? kioskRes.data.secret : null;
 
   const liantisRow=(settingsRes.data||[]).find(r=>r.key==='liantis_email');
   state.liantisEmail = liantisRow ? liantisRow.value : '';
@@ -910,8 +917,8 @@ async function loadAll(){
   }
 }
 
-const PROFILE_COLS='id,name,email,is_admin,is_kiosk,must_change_password';
-function userFromProfile(p){ return { id:p.id, name:p.name, email:p.email, isAdmin:p.is_admin, isKiosk:p.is_kiosk, mustChangePassword:p.must_change_password }; }
+const PROFILE_COLS='id,name,is_admin,is_kiosk,must_change_password,active';
+function userFromProfile(p){ return { id:p.id, name:p.name, email:p.email||'', active:p.active!==false, isAdmin:p.is_admin, isKiosk:p.is_kiosk, mustChangePassword:p.must_change_password }; }
 async function fetchBranding(slug){
   try{ const { data } = await sb.rpc('get_branding',{ p_slug:slug }); return data||null; }catch(e){ return null; }
 }
@@ -933,6 +940,7 @@ async function init(){
     if(r.error){ await sb.auth.signOut(); return startLoggedOut(); }
     applyBranding(r.brand);
     if(!r.brand.active){ renderBlocked(); return; }
+    if(r.brand.user_active===false){ renderBlocked(true); return; }
     if(!r.profile){ await sb.auth.signOut(); return startLoggedOut(); }
     state.currentUser = userFromProfile(r.profile);
     if(state.currentUser.mustChangePassword){
@@ -966,8 +974,19 @@ function renderSetupNeeded(){
   `;
 }
 
-function renderBlocked(){
+function renderBlocked(userOnly){
   const app=document.getElementById('app');
+  if(userOnly){
+    app.innerHTML=`
+    <div class="onboard-wrap">
+      <img src="${brandLogo()}" alt="${escapeHtml(brandName())}" class="onboard-mark-img">
+      <h1>Account gedeactiveerd</h1>
+      <p>Je account bij ${escapeHtml(brandName())} is gedeactiveerd. Neem contact op met je administrator.</p>
+      <button class="btn-secondary" id="blockedOut">Uitloggen</button>
+    </div>`;
+    document.getElementById('blockedOut').onclick=async ()=>{ await sb.auth.signOut(); state.currentUser=null; startLoggedOut(); };
+    return;
+  }
   app.innerHTML=`
     <div class="onboard-wrap">
       <img src="${brandLogo()}" alt="${escapeHtml(brandName())}" class="onboard-mark-img">
@@ -1041,7 +1060,7 @@ async function handleLogin(){
   const { data, error } = await sb.auth.signInWithPassword({ email, password: pw });
   if(error || !data.user){ fail('Onjuiste e-mail of wachtwoord.'); return; }
   const r = await fetchMyProfile(data.user.id);
-  if(r.error || !r.profile && r.brand && r.brand.active){
+  if(r.error || !r.profile && r.brand && r.brand.active && r.brand.user_active!==false){
     await sb.auth.signOut();
     fail('Account niet volledig aangemaakt. Contacteer de administrator.');
     return;
@@ -1054,6 +1073,7 @@ async function handleLogin(){
   }
   applyBranding(r.brand);
   if(!r.brand.active){ await sb.auth.signOut(); renderBlocked(); return; }
+  if(r.brand.user_active===false){ await sb.auth.signOut(); fail('Je account is gedeactiveerd. Neem contact op met je administrator.'); return; }
   const user=userFromProfile(r.profile);
   if(user.mustChangePassword){ renderSetNewPassword(user); return; }
   await logInAs(user);
@@ -1068,7 +1088,7 @@ function renderSetNewPassword(user){
       <p>Dit is je eerste keer inloggen, ${escapeHtml(user.name)}. Kies zelf een nieuw wachtwoord — dit gebruik je vanaf nu telkens om in te loggen.</p>
       <div class="card">
         <label class="field-label">Nieuw wachtwoord</label>
-        <input type="password" id="newPw1" placeholder="Minstens 6 tekens" autocomplete="new-password">
+        <input type="password" id="newPw1" placeholder="Minstens 8 tekens" autocomplete="new-password">
         <label class="field-label">Bevestig nieuw wachtwoord</label>
         <input type="password" id="newPw2" placeholder="Herhaal wachtwoord" autocomplete="new-password">
         <div class="err-msg" id="npErr" style="display:none;"></div>
@@ -1081,7 +1101,7 @@ function renderSetNewPassword(user){
     errEl.style.display='none';
     const p1=document.getElementById('newPw1').value;
     const p2=document.getElementById('newPw2').value;
-    if(p1.length<6){ errEl.textContent='Wachtwoord moet minstens 6 tekens zijn.'; errEl.style.display='block'; return; }
+    if(p1.length<8){ errEl.textContent='Wachtwoord moet minstens 8 tekens zijn.'; errEl.style.display='block'; return; }
     if(p1!==p2){ errEl.textContent='Wachtwoorden komen niet overeen.'; errEl.style.display='block'; return; }
     const { error: pwErr } = await sb.auth.updateUser({ password: p1 });
     if(pwErr){ errEl.textContent='Kon wachtwoord niet instellen: '+pwErr.message; errEl.style.display='block'; return; }
@@ -1206,10 +1226,8 @@ async function impersonateRealUser(userId){
     state.impersonatingSession = sessionData.session;
     state.impersonatingFrom = state.currentUser;
   }
-  const { data: profile } = await sb.from('profiles').select('id,name,email,is_admin,is_kiosk,must_change_password').eq('id', userId).maybeSingle();
-  state.currentUser = profile
-    ? { id:profile.id, name:profile.name, email:profile.email, isAdmin:profile.is_admin, isKiosk:profile.is_kiosk, mustChangePassword:profile.must_change_password }
-    : state.currentUser;
+  const { data: profile } = await sb.from('profiles').select(PROFILE_COLS).eq('id', userId).maybeSingle();
+  state.currentUser = profile ? userFromProfile(profile) : state.currentUser;
   await loadAll();
   document.getElementById('modalRoot') && (document.getElementById('modalRoot').innerHTML='');
   dispatchAfterLogin();
@@ -1267,7 +1285,7 @@ function openLoginAsEmployeeModal(){
   const root=document.getElementById('modalRoot');
   const overlay=document.createElement('div');
   overlay.className='modal-overlay';
-  const employees=state.users.filter(u=>!u.isAdmin && !u.isKiosk);
+  const employees=state.users.filter(u=>!u.isAdmin && !u.isKiosk && u.active!==false);
   let rowsHtml;
   if(employees.length===0){
     rowsHtml='<div class="no-users-hint">Nog geen medewerkers aangemaakt. Ga naar Beheer om iemand toe te voegen.</div>';
@@ -1381,7 +1399,7 @@ function drawPlanningCalendar(){
   root.appendChild(overlay);
 
   const rowsEl=overlay.querySelector('#staffRows');
-  const staffUsers = state.users.filter(u=>!u.isAdmin || state.availability[u.id]);
+  const staffUsers = state.users.filter(u=>(!u.isAdmin || state.availability[u.id]) && !u.isKiosk && u.active!==false);
   const list = state.users.length ? state.users : [];
   if(list.length===0){
     rowsEl.innerHTML='<div class="no-users-hint">Nog geen medewerkers aangemaakt. Ga naar Beheer om iemand toe te voegen.</div>';
@@ -1434,7 +1452,7 @@ async function createUser(){
   const isAdmin=document.getElementById('nuAdmin').checked;
   const isKiosk=document.getElementById('nuKiosk').checked;
   if(!name || !email){ errEl.textContent='Vul naam en e-mailadres in.'; errEl.style.display='block'; return; }
-  if(!pw || pw.length<6){ errEl.textContent='Kies een tijdelijk wachtwoord van minstens 6 tekens (of gebruik Genereer).'; errEl.style.display='block'; return; }
+  if(!pw || pw.length<8){ errEl.textContent='Kies een tijdelijk wachtwoord van minstens 8 tekens (of gebruik Genereer).'; errEl.style.display='block'; return; }
   if(state.users.some(u=>u.email===email)){ errEl.textContent='Er bestaat al een account met dit e-mailadres.'; errEl.style.display='block'; return; }
   const result=await callEdgeFunction('admin-users', {action:'create', name, email, tempPassword:pw, isAdmin, isKiosk});
   if(!result.success){ errEl.textContent=result.error||'Aanmaken mislukt.'; errEl.style.display='block'; return; }
@@ -1465,11 +1483,15 @@ async function createUser(){
           <span class="u-name">${escapeHtml(u.name)}</span>
           ${u.isAdmin?'<span class="badge admin">Admin</span>':''}
           ${u.isKiosk?'<span class="badge admin" style="background:var(--amber);color:var(--amber-ink);">Kiosk</span>':''}
+          ${u.active===false?'<span class="badge pending" style="background:var(--red);color:#fff;">Gedeactiveerd</span>':''}
           ${u.mustChangePassword?'<span class="badge pending">Nog niet ingelogd</span>':''}
           ${(!u.isKiosk && !u.isAdmin && !(u.personal&&u.personal.completed))?'<span class="badge pending">Gegevens ontbreken</span>':''}
           <div class="u-email">${escapeHtml(u.email)} ${u.isKiosk?'':'· <span style="color:var(--navy); font-weight:700;">Gegevens ›</span>'}</div>
         </div>
-        <button class="btn-ghost-sm" data-reset="${u.id}">Wachtwoord resetten</button>
+        <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
+          <button class="btn-ghost-sm" data-reset="${u.id}">Wachtwoord resetten</button>
+          ${u.id!==state.currentUser.id ? '<button class="btn-ghost-sm" data-active="'+u.id+'">'+(u.active===false?'Opnieuw activeren':'Deactiveren')+'</button>' : ''}
+        </div>
       </div>
       <div class="reset-panel" id="resetPanel-${u.id}" style="display:none;">
         <label class="field-label">Nieuw tijdelijk wachtwoord</label>
@@ -1483,6 +1505,16 @@ async function createUser(){
     wrap.appendChild(row);
   });
   wrap.querySelectorAll('[data-info]').forEach(el2=>{ const id=el2.getAttribute('data-info'); const u=state.users.find(x=>x.id===id); if(u&&!u.isKiosk) el2.onclick=()=>openPersonalDataModal(id); });
+  wrap.querySelectorAll('[data-active]').forEach(btn=>{
+    btn.onclick=async ()=>{
+      const u=state.users.find(x=>x.id===btn.getAttribute('data-active')); if(!u) return;
+      const to=(u.active===false);
+      if(!await askConfirm(to ? u.name+' opnieuw toegang geven tot de app?' : u.name+' deactiveren? Deze persoon kan dan niet meer inloggen of klokken. Gewerkte uren en gegevens blijven bewaard.', to?'Activeren':'Deactiveren')) return;
+      const result=await callEdgeFunction('admin-users', {action:'set_active', userId:u.id, active:to});
+      if(!result.success){ showMessage(result.error||'Wijzigen mislukt.'); return; }
+      u.active=to; drawUserList();
+    };
+  });
   wrap.querySelectorAll('[data-reset]').forEach(btn=>{
     btn.onclick=()=>{
       const id=btn.getAttribute('data-reset');
@@ -1500,7 +1532,7 @@ async function createUser(){
     btn.onclick=async ()=>{
       const id=btn.getAttribute('data-confirm');
       const pw=document.getElementById('resetPw-'+id).value;
-      if(!pw || pw.length<6){ showMessage('Kies een tijdelijk wachtwoord van minstens 6 tekens.'); return; }
+      if(!pw || pw.length<8){ showMessage('Kies een tijdelijk wachtwoord van minstens 8 tekens.'); return; }
       const u=state.users.find(x=>x.id===id);
       const result=await callEdgeFunction('admin-users', {action:'reset_password', userId:id, tempPassword:pw});
       if(!result.success){ showMessage(result.error||'Reset mislukt.'); return; }
@@ -1558,29 +1590,10 @@ function formatDateLong(dk){
 }
 
 /* ================= KIOSK / QR-KLOKSYSTEEM ================= */
-const KIOSK_WINDOW_MS = 15*60*1000;
-
-async function ensureKioskSecret(){
-  if(state.kioskSecret) return state.kioskSecret;
-  const secret = randomSalt()+randomSalt();
-  const { error } = await sb.from('kiosk_secret').upsert({ tenant_id:state.tenant.id, secret });
-  if(!error) state.kioskSecret = secret;
-  else {
-    // mogelijk al aangemaakt door een andere sessie ondertussen — gewoon opnieuw ophalen
-    const { data } = await sb.from('kiosk_secret').select('secret').maybeSingle();
-    state.kioskSecret = data ? data.secret : null;
-  }
-  return state.kioskSecret;
-}
-
-function currentWindowIndex(){ return Math.floor(Date.now()/KIOSK_WINDOW_MS); }
-
-async function computeKioskToken(windowIndex){
-  const h = await sha256Hex(state.kioskSecret+':'+windowIndex);
-  return h.slice(0,20);
-}
-
-let _kioskLastWindow=null;
+// De QR-code wordt door de SERVER gemaakt (functie kiosk_token) en is ~30 seconden geldig.
+// Het geheim waarmee de code berekend wordt verlaat de database nooit: wie het kiosk-toestel in handen
+// heeft kan dus geen codes "voor later" of voor thuis berekenen, en een foto van de code is snel waardeloos.
+let _kioskTimer=null;
 async function renderKioskScreen(){
   const app=document.getElementById('app');
   app.innerHTML=`
@@ -1588,30 +1601,36 @@ async function renderKioskScreen(){
       <div class="kiosk-card">
         <div class="kiosk-title">${escapeHtml(brandName())}</div>
         <div id="kioskQr" class="kiosk-qr"></div>
-        <div class="kiosk-hint">Scan bij het in- of uitklokken</div>
+        <div class="kiosk-hint" id="kioskHint">Scan bij het in- of uitklokken</div>
         <button class="kiosk-logout" id="kioskLogoutBtn">${state.impersonatingFrom ? 'Terug naar admin (test)' : 'Uitloggen'}</button>
       </div>
     </div>
   `;
   document.getElementById('kioskLogoutBtn').onclick=state.impersonatingFrom ? restoreFromImpersonation : logout;
-  if(!state.kioskSecret) await ensureKioskSecret();
-  _kioskLastWindow=null;
   await kioskTick();
-  if(window._kioskIv) clearInterval(window._kioskIv);
-  window._kioskIv=setInterval(kioskTick, 4000);
 }
 
 async function kioskTick(){
-  const wi=currentWindowIndex();
-  if(wi===_kioskLastWindow) return;
-  _kioskLastWindow=wi;
-  const token=await computeKioskToken(wi);
-  const payload='SHIFTKIOSK:'+wi+':'+token;
+  if(_kioskTimer){ clearTimeout(_kioskTimer); _kioskTimer=null; }
   const el=document.getElementById('kioskQr');
-  if(!el) return;
-  el.innerHTML='';
-  new QRCode(el, { text:payload, width:260, height:260, correctLevel:QRCode.CorrectLevel.M });
+  if(!el) return;                                   // kiosk-scherm is gesloten: stop met verversen
+  let next=5000;
+  try{
+    const { data, error } = await sb.rpc('kiosk_token');
+    const hint=document.getElementById('kioskHint');
+    if(error || !data || !data.payload){
+      el.innerHTML='';
+      if(hint) hint.textContent='Geen verbinding met de server. Nieuwe poging…';
+    } else {
+      el.innerHTML='';
+      new QRCode(el, { text:data.payload, width:260, height:260, correctLevel:QRCode.CorrectLevel.M });
+      if(hint) hint.textContent='Scan bij het in- of uitklokken';
+      next=Math.max(1000, Math.min(30000, Number(data.expires_in_ms)||5000))+300;
+    }
+  }catch(e){ /* opnieuw proberen */ }
+  if(document.getElementById('kioskQr')) _kioskTimer=setTimeout(kioskTick, next);
 }
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden && document.getElementById('kioskQr')) kioskTick(); });
 
 /* ---- clock in/out (staff side) ---- */
 const MAX_SESSION_MS=14*3600000;   // een sessie langer dan 14u = vergeten uit te klokken
@@ -2068,7 +2087,7 @@ function getPlanPrefs(){
   p.levels=p.levels||{}; p.fixed=p.fixed||{};
   return p;
 }
-function planStaff(){ return state.users.filter(u=>!u.isKiosk); }
+function planStaff(){ return state.users.filter(u=>!u.isKiosk && u.active!==false); }
 
 function drawPlanningPrefsInto(body){
   if(!state.currentUser.isAdmin){ body.innerHTML='<div class="empty-state">Geen toegang.</div>'; return; }
@@ -2901,8 +2920,8 @@ async function refreshData(force){
     try{
       const { data: b } = await sb.rpc('get_my_branding');
       if(b){
-        if(!b.active){ applyBranding(b); _lastRefresh=Date.now(); renderBlocked(); return; }
-        if(JSON.stringify(b)!==JSON.stringify(Object.assign({},b,state.tenant?Object.fromEntries(Object.keys(b).map(k=>[k,state.tenant[k]])):{}))){ applyBranding(b); brandChanged=true; }
+        if(!b.active || b.user_active===false){ if(!b.active) applyBranding(b); _lastRefresh=Date.now(); renderBlocked(b.active); return; }
+        const BK=['name','legal_name','logo','color_primary','color_secondary','color_accent']; if(!state.tenant || BK.some(k=>(b[k]||null)!==(state.tenant[k]||null))){ applyBranding(b); brandChanged=true; }
       }
     }catch(e){}
     const seq0=window._writeSeq||0;
@@ -3143,7 +3162,7 @@ function drawAdminGridTable(){
     html+='<th>'+wd+'<br>'+d.getDate()+'/'+(d.getMonth()+1)+'</th>';
   });
   html+='</tr></thead><tbody>';
-  state.users.filter(u=>!u.isKiosk).forEach(u=>{
+  state.users.filter(u=>!u.isKiosk && u.active!==false).forEach(u=>{
     html+='<tr><td class="sticky-col"><div class="gm-name">'+escapeHtml(u.name)+'</div><div class="gm-role">'+(u.isAdmin?'Administrator':'Medewerker')+'</div></td>';
     days.forEach(d=>{
       const key=toDateKeyFromDate(d);
@@ -3365,6 +3384,7 @@ function drawPlanningInto(body){
 }
 
 function drawBeheerInto(body){
+  if(!state.currentUser.isAdmin){ body.innerHTML='<div class="empty-state">Geen toegang.</div>'; return; }
   body.innerHTML=`
     <p class="section-hint" style="margin:0 16px 14px;">Maak accounts aan voor medewerkers. Zij loggen de eerste keer in met het wachtwoord dat jij kiest, en stellen dan zelf een nieuw wachtwoord in.</p>
     <div class="card" style="margin:0 16px 20px;">
@@ -3437,7 +3457,7 @@ function drawProfielInto(body){
     <h2 class="section-title" style="margin:20px 16px 10px;">Wachtwoord wijzigen</h2>
     <div class="card" style="margin:0 16px 16px;">
       <label class="field-label" style="margin-top:0;">Nieuw wachtwoord</label>
-      <input type="password" id="pwNew1" placeholder="Minstens 6 tekens">
+      <input type="password" id="pwNew1" placeholder="Minstens 8 tekens">
       <label class="field-label">Bevestig nieuw wachtwoord</label>
       <input type="password" id="pwNew2" placeholder="Herhaal wachtwoord">
       <div class="err-msg" id="pwErr" style="display:none;"></div>
@@ -3450,7 +3470,7 @@ function drawProfielInto(body){
     errEl.style.display='none'; okEl.style.display='none';
     const p1=document.getElementById('pwNew1').value;
     const p2=document.getElementById('pwNew2').value;
-    if(p1.length<6){ errEl.textContent='Wachtwoord moet minstens 6 tekens zijn.'; errEl.style.display='block'; return; }
+    if(p1.length<8){ errEl.textContent='Wachtwoord moet minstens 8 tekens zijn.'; errEl.style.display='block'; return; }
     if(p1!==p2){ errEl.textContent='Wachtwoorden komen niet overeen.'; errEl.style.display='block'; return; }
     const { error: pwErr } = await sb.auth.updateUser({ password: p1 });
     if(pwErr){ errEl.textContent='Kon wachtwoord niet aanpassen: '+pwErr.message; errEl.style.display='block'; return; }

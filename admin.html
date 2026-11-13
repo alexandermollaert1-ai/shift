@@ -3,10 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Beveiliging: enkel het script van deze pagina (herkend aan zijn hash) en de vastgepinde bibliotheken mogen draaien.
+     LET OP: wijzigt het scriptblok onderaan, dan moet de sha256-hash hieronder opnieuw berekend worden, anders start de app niet. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-uY/lyDWGt/6ctDVRIe8g9zNwbCcbIdFtYKS+MFfnvRo=' https://cdn.jsdelivr.net/npm/@supabase/; style-src 'unsafe-inline'; img-src data: blob:; connect-src https://vdtxzfvzonojrhrjbjmg.supabase.co; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta name="referrer" content="no-referrer">
 <title>Shift Beheer</title>
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230A6E9E'/%3E%3Cpath d='M18 24h24l-7-7M46 40H22l7 7' stroke='%23fff' stroke-width='5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.js" integrity="sha384-uteMfOloLDGt042uDz+xHGF3ym63/WQ6rFq7murQRG8Ih7QrXGEGNtWd8688sb4O" crossorigin="anonymous"></script>
 <style>
   :root{ --bg:#F3F6F9; --surface:#fff; --ink:#16202A; --soft:#5B6773; --line:#DDE3E8; --brand:#0A6E9E; --brand-ink:#fff; --red:#C8123F; --green:#2F7D5C; --amber:#FBC913; --radius:12px; }
   *{box-sizing:border-box;}
@@ -58,6 +62,7 @@
 <div id="app"></div>
 <div id="modalRoot"></div>
 <script>
+if(window.top!==window.self){ try{ window.top.location=window.self.location.href; }catch(e){ document.documentElement.innerHTML=''; throw new Error('Deze pagina mag niet in een frame geladen worden.'); } }
 // ==== VUL HIER JE SUPABASE-GEGEVENS IN ====
 const SUPABASE_URL = 'https://vdtxzfvzonojrhrjbjmg.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_6h9vcWa-fiv5XsGZADhRrw_JZYTQ5-O';   // publieke sleutel: mag in de browser staan
@@ -71,12 +76,12 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const LOGO_SVG='data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#0A6E9E"/><path d="M18 24h24l-7-7M46 40H22l7 7" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>');
 const st={ tenants:[], view:'list', selected:null, newLogo:undefined };
 
-const esc=s=>{ const d=document.createElement('div'); d.textContent=s==null?'':String(s); return d.innerHTML; };
+const esc=s=>String(s==null?'':s).replace(/[&<>"'`]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','`':'&#96;'}[c]));
 const $=id=>document.getElementById(id);
 const money=n=>'€ '+Number(n||0).toLocaleString('nl-BE',{minimumFractionDigits:2,maximumFractionDigits:2});
 function appBase(){ return APP_URL || (location.origin+location.pathname.replace(/[^/]*$/,'')+'index.html'); }
 function tenantLink(slug){ return appBase()+'?k='+encodeURIComponent(slug); }
-function genPw(){ const c='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'; let o=''; for(let i=0;i<10;i++) o+=c[Math.floor(Math.random()*c.length)]; return o; }
+function genPw(){ const c='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'; const max=256-(256%c.length); let o=''; while(o.length<12){ for(const v of crypto.getRandomValues(new Uint8Array(24))){ if(v<max && o.length<12) o+=c[v%c.length]; } } return o; }
 function slugify(n){ return String(n||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,40); }
 function fmtDate(ts){ if(!ts) return '—'; const d=new Date(ts); return d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear(); }
 
